@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vercel Deployments</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #181818;
+      --surface3: #1e1e1e;
+      --border: #1f1f1f;
+      --border-bright: #2e2e2e;
+      --text: #efefef;
+      --muted: #555;
+      --green: #00e599;
+      --green-dim: rgba(0,229,153,0.08);
+      --yellow: #f5a623;
+      --yellow-dim: rgba(245,166,35,0.08);
+      --red: #ff4f4f;
+      --red-dim: rgba(255,79,79,0.08);
+      --blue: #4f8ef7;
+      --blue-dim: rgba(79,142,247,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+      position: relative; z-index: 1;
+    }
+
+    /* Header */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo svg { width: 24px; height: 24px; fill: var(--text); }
+    .logo-text { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+    .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 3px; }
+
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .token-field {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border-bright);
+      border-radius: 6px; padding: 7px 12px; font-size: 12px;
+    }
+    .token-field label { color: var(--muted); white-space: nowrap; font-size: 10px; letter-spacing: 0.1em; }
+    .token-field input {
+      background: transparent; border: none; outline: none;
+      color: var(--text); font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; width: 210px;
+    }
+    .token-field input::placeholder { color: #383838; }
+
+    .btn {
+      background: var(--text); color: var(--bg);
+      border: none; border-radius: 6px; padding: 8px 18px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; margin-bottom: 28px;
+    }
+    .stat { background: var(--surface); padding: 18px 22px; display: flex; flex-direction: column; gap: 5px; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+
+    /* Controls */
+    .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 180px; }
+    .search-wrap input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border-bright);
+      border-radius: 6px; padding: 8px 12px 8px 34px;
+      color: var(--text); font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; outline: none; transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: #444; }
+    .search-wrap input::placeholder { color: #383838; }
+    .search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 14px; pointer-events: none;
+    }
+
+    .filter-btn {
+      background: var(--surface); border: 1px solid var(--border-bright);
+      border-radius: 6px; padding: 8px 13px;
+      color: var(--muted); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.05em;
+    }
+    .filter-btn:hover, .filter-btn.active { border-color: #555; color: var(--text); }
+    .filter-btn.active { background: var(--surface2); }
+
+    /* Commit Group */
+    .commit-group { margin-bottom: 18px; animation: groupIn 0.3s ease both; }
+    @keyframes groupIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .commit-header {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border-bright);
+      border-radius: 8px 8px 0 0; border-bottom: none;
+    }
+
+    .commit-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-bright);
+      margin-top: 6px; flex-shrink: 0;
+    }
+
+    .commit-info { flex: 1; min-width: 0; }
+
+    .commit-message {
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 680px;
+    }
+
+    .commit-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+
+    .commit-sha { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .commit-sha span { color: #666; }
+
+    .commit-branch {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--surface3); border: 1px solid var(--border-bright);
+      border-radius: 4px; padding: 2px 8px; font-size: 10px; color: var(--muted);
+    }
+
+    .commit-time { font-size: 10px; color: var(--muted); }
+
+    .deploy-count {
+      font-size: 10px; color: var(--muted);
+      background: var(--surface3); border: 1px solid var(--border-bright);
+      border-radius: 100px; padding: 1px 8px;
+    }
+
+    /* Table inside commit group */
+    .group-table-wrap {
+      border: 1px solid var(--border-bright);
+      border-radius: 0 0 8px 8px; overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { background: var(--surface); border-bottom: 1px solid var(--border-bright); }
+    th {
+      text-align: left; padding: 9px 16px;
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; white-space: nowrap;
+    }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+
+    td { padding: 11px 16px; font-size: 12px; vertical-align: middle; }
+
+    .project-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px; color: var(--text); }
+
+    .url-link { color: var(--muted); text-decoration: none; font-size: 11px; transition: color 0.15s; }
+    .url-link:hover { color: var(--text); text-decoration: underline; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 100px;
+      font-size: 10px; font-weight: 500; letter-spacing: 0.04em;
+    }
+    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .badge-ready    { background: var(--green-dim); color: var(--green); }
+    .badge-ready::before { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .badge-building { background: var(--yellow-dim); color: var(--yellow); }
+    .badge-building::before { background: var(--yellow); animation: pulse 1s infinite; }
+    .badge-error    { background: var(--red-dim); color: var(--red); }
+    .badge-error::before { background: var(--red); }
+    .badge-queued   { background: var(--blue-dim); color: var(--blue); }
+    .badge-queued::before { background: var(--blue); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.35} }
+
+    .env-tag {
+      background: var(--surface3); border: 1px solid var(--border-bright);
+      border-radius: 3px; padding: 1px 7px;
+      font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em;
+    }
+
+    .time-ago { color: var(--muted); font-size: 11px; }
+
+    /* Cancel buttons */
+    .cancel-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: transparent;
+      border: 1px solid #3a1a1a;
+      border-radius: 5px; padding: 3px 10px;
+      color: #884444; font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; letter-spacing: 0.04em;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .cancel-btn:hover:not(:disabled) {
+      border-color: var(--red); color: var(--red);
+      background: var(--red-dim);
+    }
+    .cancel-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .cancel-btn.canceling {
+      border-color: #553333; color: #553333; cursor: wait;
+    }
+    .cancel-btn.done {
+      border-color: #2a2a2a; color: var(--muted); cursor: default;
+    }
+
+    /* Group cancel lives in header right side */
+    .commit-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; padding-left: 12px; }
+
+    /* Confirm overlay */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .confirm-box {
+      background: var(--surface2); border: 1px solid var(--border-bright);
+      border-radius: 10px; padding: 28px 32px; max-width: 380px; width: 90%;
+      animation: slideUp 0.18s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .confirm-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .confirm-sub { font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .confirm-no {
+      background: transparent; border: 1px solid var(--border-bright);
+      border-radius: 5px; padding: 7px 16px;
+      color: var(--muted); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; cursor: pointer; transition: all 0.15s;
+    }
+    .confirm-no:hover { border-color: #555; color: var(--text); }
+    .confirm-yes {
+      background: var(--red-dim); border: 1px solid var(--red);
+      border-radius: 5px; padding: 7px 16px;
+      color: var(--red); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .confirm-yes:hover { background: rgba(255,79,79,0.18); }
+
+    /* State boxes */
+    .state-box {
+      text-align: center; padding: 72px 24px;
+      border: 1px dashed var(--border-bright); border-radius: 8px;
+    }
+    .state-box .icon { font-size: 32px; margin-bottom: 14px; }
+    .state-box .title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .state-box .sub { font-size: 12px; color: var(--muted); line-height: 1.8; }
+
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid var(--border-bright); border-top-color: var(--text);
+      border-radius: 50%; animation: spin 0.65s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Pager */
+    .pager {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0 0; font-size: 11px; color: var(--muted);
+    }
+    .page-btns { display: flex; gap: 6px; }
+    .page-btn {
+      background: var(--surface); border: 1px solid var(--border-bright);
+      border-radius: 5px; padding: 6px 14px;
+      color: var(--muted); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; cursor: pointer; transition: all 0.15s;
+    }
+    .page-btn:hover:not(:disabled) { border-color: #555; color: var(--text); }
+    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .page-dots { display: flex; gap: 5px; align-items: center; }
+    .page-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border-bright); cursor: pointer; transition: background 0.15s;
+    }
+    .page-dot.active { background: var(--text); }
+    .page-dot:hover { background: #555; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 22px; right: 22px;
+      background: var(--surface); border: 1px solid var(--border-bright);
+      border-radius: 7px; padding: 11px 16px;
+      font-size: 12px; color: var(--text);
+      z-index: 999; opacity: 0; transform: translateY(8px);
+      transition: all 0.22s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.err  { border-color: var(--red); color: var(--red); }
+
+    @media (max-width: 680px) {
+      .stats-bar { grid-template-columns: repeat(2,1fr); }
+      .token-field input { width: 140px; }
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z"/></svg>
+      <div>
+        <div class="logo-text">Vercel</div>
+        <div class="logo-sub">Deployments</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="token-field">
+        <label>TOKEN</label>
+        <input id="tokenInput" type="password" placeholder="vercel_••••••••••••••" autocomplete="off" />
+      </div>
+      <button class="btn" id="fetchBtn" onclick="startFresh()">Fetch</button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat">
+      <div class="stat-value" id="statTotal">—</div>
+      <div class="stat-label">This page</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color:var(--green)" id="statReady">—</div>
+      <div class="stat-label">Ready</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color:var(--yellow)" id="statBuilding">—</div>
+      <div class="stat-label">Building</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color:var(--red)" id="statError">—</div>
+      <div class="stat-label">Error</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls" id="controls" style="display:none">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input id="searchInput" type="text" placeholder="Search project, URL or branch…" />
+    </div>
+    <button class="filter-btn active" data-filter="ALL"      onclick="setFilter(this)">All</button>
+    <button class="filter-btn"        data-filter="READY"    onclick="setFilter(this)">Ready</button>
+    <button class="filter-btn"        data-filter="BUILDING" onclick="setFilter(this)">Building</button>
+    <button class="filter-btn"        data-filter="ERROR"    onclick="setFilter(this)">Error</button>
+    <button class="filter-btn"        data-filter="QUEUED"   onclick="setFilter(this)">Queued</button>
+  </div>
+
+  <!-- Main area -->
+  <div id="mainArea">
+    <div class="state-box">
+      <div class="icon">▲</div>
+      <div class="title">Enter your Vercel token</div>
+      <div class="sub">
+        Generate one at <strong>vercel.com/account/tokens</strong><br/>
+        Your token stays in the browser and is never stored.<br/>
+        Deployments are fetched one page at a time — 20 per page.
+      </div>
+    </div>
+  </div>
+
+  <!-- Pager -->
+  <div class="pager" id="pager" style="display:none">
+    <span id="pageInfo"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="page-dots" id="pageDots"></div>
+      <div class="page-btns">
+        <button class="page-btn" id="prevBtn" onclick="goPage(currentPage-1)">← Prev</button>
+        <button class="page-btn" id="nextBtn" onclick="goPage(currentPage+1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+const MAX_DOTS  = 8;
+
+// ── State ─────────────────────────────────────────────────────
+let token         = '';
+let currentPage   = 1;
+let totalFetched  = 0;
+let hasMore       = true;
+let currentFilter = 'ALL';
+let searchQ       = '';
+
+// cache[pageNumber] = { deployments: [], nextCursor: string|null }
+const cache = {};
+
+// ── Entry ─────────────────────────────────────────────────────
+async function startFresh() {
+  token = document.getElementById('tokenInput').value.trim();
+  if (!token) { showToast('Paste your Vercel API token first.', true); return; }
+  Object.keys(cache).forEach(k => delete cache[k]);
+  currentPage = 1; totalFetched = 0; hasMore = true;
+  document.getElementById('statsBar').style.display = 'grid';
+  document.getElementById('controls').style.display = 'flex';
+  await goPage(1);
+}
+
+// ── Navigation ────────────────────────────────────────────────
+async function goPage(n) {
+  if (n < 1) return;
+  // Can only advance to a page we have the cursor for
+  if (n > 1 && !cache[n - 1]) return;
+  // Don't go beyond if we know there's no more
+  if (!hasMore && !cache[n]) return;
+  currentPage = n;
+  await loadPage(n);
+}
+
+// ── Fetch exactly one page ────────────────────────────────────
+async function loadPage(n) {
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  setMain(`<div class="state-box">
+    <div class="icon"><span class="spinner"></span></div>
+    <div class="title">Loading page ${n}…</div>
+    <div class="sub">Fetching up to ${PAGE_SIZE} deployments</div>
+  </div>`);
+
+  try {
+    if (!cache[n]) {
+      // Build URL: page 1 = fresh, page N = use cursor stored from page N-1
+      let url = `https://api.vercel.com/v6/deployments?limit=${PAGE_SIZE}`;
+      if (n > 1 && cache[n - 1]?.nextCursor) {
+        url += `&until=${cache[n - 1].nextCursor}`;
+      }
+
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      const deployments = data.deployments || [];
+      const nextCursor  = data.pagination?.next || null;
+
+      hasMore = !!(nextCursor && deployments.length >= PAGE_SIZE);
+      cache[n] = { deployments, nextCursor };
+      totalFetched = Math.max(totalFetched, (n - 1) * PAGE_SIZE + deployments.length);
+    }
+
+    const { deployments } = cache[n];
+    updateStats(deployments);
+    renderGroups(deployments);
+    updatePager();
+    showToast(`Page ${n} · ${cache[n].deployments.length} deployments`);
+  } catch (e) {
+    setMain(`<div class="state-box"><div class="icon">✕</div>
+      <div class="title">Failed to fetch</div>
+      <div class="sub">${esc(e.message)}<br/><br/>Check your token and try again.</div></div>`);
+    showToast(e.message, true);
+  }
+
+  btn.disabled = false; btn.textContent = 'Fetch';
+}
+
+// ── Render: group by commit SHA ───────────────────────────────
+function renderGroups(deployments) {
+  // Apply local filter + search on this page's data
+  const q = searchQ.toLowerCase();
+  const filtered = deployments.filter(d => {
+    const stateOk = currentFilter === 'ALL' || d.state === currentFilter;
+    const msg = d.meta?.githubCommitMessage || d.meta?.gitlabCommitMessage || '';
+    const searchOk = !q || [d.name, d.url, msg, d.meta?.githubCommitRef, d.meta?.branchAlias]
+      .filter(Boolean).some(v => v.toLowerCase().includes(q));
+    return stateOk && searchOk;
+  });
+
+  if (filtered.length === 0) {
+    setMain('<div class="state-box"><div class="icon">○</div><div class="title">No deployments match</div><div class="sub">Adjust filters or search, or try another page.</div></div>');
+    return;
+  }
+
+  // Build ordered groups by commit key
+  const order = [];
+  const map   = new Map();
+
+  filtered.forEach(d => {
+    const sha = d.meta?.githubCommitSha
+             || d.meta?.gitlabCommitSha
+             || d.meta?.bitbucketCommitSha
+             || null;
+
+    // Fallback key: group by project + commit message, otherwise by uid
+    const key = sha
+      || (d.meta?.githubCommitMessage
+          ? `msg::${d.name}::${d.meta.githubCommitMessage}`
+          : `uid::${d.uid}`);
+
+    if (!map.has(key)) {
+      map.set(key, {
+        sha,
+        short: sha ? sha.slice(0, 7) : null,
+        message: d.meta?.githubCommitMessage
+               || d.meta?.gitlabCommitMessage
+               || d.meta?.bitbucketCommitMessage
+               || '(no commit message)',
+        branch:  d.meta?.githubCommitRef
+               || d.meta?.branchAlias
+               || d.gitSource?.branch
+               || 'main',
+        author:  d.meta?.githubCommitAuthorName
+               || d.meta?.gitlabCommitAuthorName
+               || '',
+        createdAt: d.createdAt,
+        items: [],
+      });
+      order.push(key);
+    }
+    map.get(key).items.push(d);
+  });
+
+  let html = '';
+  order.forEach((key, gi) => {
+    const g = map.get(key);
+
+    const cancellable = g.items.filter(d => d.state === 'BUILDING' || d.state === 'QUEUED');
+
+    const rows = g.items.map(d => {
+      const canCancel = d.state === 'BUILDING' || d.state === 'QUEUED';
+      const cancelCell = canCancel
+        ? `<button class="cancel-btn" id="cbtn-${d.uid}" data-uid="${d.uid}" data-name="${esc(d.name)}">✕ Cancel</button>`
+        : `<span style="font-size:10px;color:var(--border-bright)">—</span>`;
+      return `
+      <tr id="row-${d.uid}">
+        <td><span class="project-name">${esc(d.name)}</span></td>
+        <td id="status-${d.uid}">${statusBadge(d.state)}</td>
+        <td><a class="url-link" href="https://${esc(d.url)}" target="_blank" rel="noopener">${esc(d.url)}</a></td>
+        <td><span class="env-tag">${esc(d.target || 'preview')}</span></td>
+        <td class="time-ago">${timeAgo(d.createdAt)}</td>
+        <td>${cancelCell}</td>
+      </tr>`;
+    }).join('');
+
+    const groupCancelPlaceholder = cancellable.length > 0
+      ? `<button class="cancel-btn" data-group-key="${gi}">✕ Cancel all (${cancellable.length})</button>`
+      : '';
+
+    html += `
+      <div class="commit-group" style="animation-delay:${gi * 45}ms">
+        <div class="commit-header">
+          <div class="commit-dot"></div>
+          <div class="commit-info">
+            <div class="commit-message">${esc(g.message)}</div>
+            <div class="commit-meta">
+              ${g.short ? `<span class="commit-sha"><span>${g.short}</span></span>` : ''}
+              <span class="commit-branch">⎇ ${esc(g.branch)}</span>
+              ${g.author ? `<span class="commit-time">${esc(g.author)}</span>` : ''}
+              <span class="commit-time">${timeAgo(g.createdAt)}</span>
+              <span class="deploy-count">${g.items.length} deployment${g.items.length > 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          <div class="commit-header-actions">${groupCancelPlaceholder}</div>
+        </div>
+        <div class="group-table-wrap">
+          <table>
+            <thead><tr>
+              <th>Project</th><th>Status</th><th>URL</th><th>Env</th><th>Age</th><th>Action</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+
+  setMain(html);
+
+  // Wire up all cancel buttons via addEventListener (avoids onclick/JSON quoting issues)
+  // Per-deployment cancel buttons
+  document.querySelectorAll('.cancel-btn[data-uid]').forEach(btn => {
+    const uid  = btn.dataset.uid;
+    const name = btn.dataset.name || uid;
+    const k = regCancel([uid], `Cancel deployment of <strong>${name}</strong>?`);
+    btn.addEventListener('click', () => confirmCancel(k));
+  });
+
+  // Group-level cancel buttons
+  document.querySelectorAll('.cancel-btn[data-group-key]').forEach(btn => {
+    // Find sibling row buttons in this group to gather uids
+    const groupEl = btn.closest('.commit-group');
+    const rowBtns = groupEl ? groupEl.querySelectorAll('tbody .cancel-btn[data-uid]') : [];
+    const uids = Array.from(rowBtns).map(b => b.dataset.uid).filter(Boolean);
+    if (uids.length > 0) {
+      const k = regCancel(uids, `Cancel all ${uids.length} active deployment${uids.length > 1 ? 's' : ''} in this commit?`);
+      btn.addEventListener('click', () => confirmCancel(k));
+    }
+  });
+}
+
+// ── Stats (for current page) ──────────────────────────────────
+function updateStats(deployments) {
+  const c = s => deployments.filter(d => d.state === s).length;
+  document.getElementById('statTotal').textContent    = deployments.length;
+  document.getElementById('statReady').textContent    = c('READY');
+  document.getElementById('statBuilding').textContent = c('BUILDING');
+  document.getElementById('statError').textContent    = c('ERROR');
+}
+
+// ── Pager UI ──────────────────────────────────────────────────
+function updatePager() {
+  document.getElementById('pager').style.display = 'flex';
+
+  const knownPages = Object.keys(cache).filter(k => /^\d+$/.test(k)).length;
+  const showNext   = hasMore || !!cache[currentPage]?.nextCursor;
+
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = !showNext;
+
+  const total = hasMore ? `${totalFetched}+` : totalFetched;
+  document.getElementById('pageInfo').textContent =
+    `Page ${currentPage}${knownPages > 1 ? ' of ' + (hasMore ? knownPages + '+' : knownPages) : ''} · ${total} total`;
+
+  // Dots
+  const visibleDots = Math.min(knownPages + (hasMore ? 1 : 0), MAX_DOTS);
+  document.getElementById('pageDots').innerHTML = Array.from({ length: visibleDots }, (_, i) => {
+    const p = i + 1;
+    const reachable = !!cache[p] || (p === currentPage + 1 && showNext);
+    return `<div class="page-dot${p === currentPage ? ' active' : ''}"
+      style="${!reachable ? 'opacity:0.35;cursor:default' : ''}"
+      onclick="${reachable ? `goPage(${p})` : ''}"
+      title="Page ${p}"></div>`;
+  }).join('');
+}
+
+// ── Filter / Search ───────────────────────────────────────────
+function setFilter(el) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = el.dataset.filter;
+  if (cache[currentPage]) renderGroups(cache[currentPage].deployments);
+}
+
+// ── Cancel registry: avoids JSON inside onclick attrs ─────────
+// Maps integer key → { uids, label }
+const cancelRegistry = new Map();
+let _cancelKey = 0;
+function regCancel(uids, label) {
+  const k = ++_cancelKey;
+  cancelRegistry.set(k, { uids, label });
+  return k;
+}
+
+// ── Cancel: confirm dialog ────────────────────────────────────
+function confirmCancel(registryKey) {
+  const entry = cancelRegistry.get(registryKey);
+  if (!entry) return;
+  const { uids, label } = entry;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+
+  const yesKey = regCancel(uids, label); // re-register so the yes-btn has its own key
+
+  const box = document.createElement('div');
+  box.className = 'confirm-box';
+  box.innerHTML = `
+    <div class="confirm-title">Cancel deployment${uids.length > 1 ? 's' : ''}?</div>
+    <div class="confirm-sub">${label}<br/>This action cannot be undone.</div>
+    <div class="confirm-actions">
+      <button class="confirm-no">Keep running</button>
+      <button class="confirm-yes">✕ Yes, cancel${uids.length > 1 ? ' all' : ''}</button>
+    </div>`;
+
+  box.querySelector('.confirm-no').addEventListener('click', () => overlay.remove());
+  box.querySelector('.confirm-yes').addEventListener('click', () => {
+    overlay.remove();
+    cancelDeployments(uids);
+  });
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function cancelDeployments(uids) {
+  // Disable all involved buttons immediately
+  uids.forEach(uid => {
+    const btn = document.getElementById(`cbtn-${uid}`);
+    if (btn) { btn.disabled = true; btn.classList.add('canceling'); btn.textContent = '⏳ Canceling…'; }
+  });
+
+  const results = await Promise.allSettled(
+    uids.map(uid =>
+      fetch(`https://api.vercel.com/v12/deployments/${uid}/cancel`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(async r => {
+        if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${r.status}`); }
+        return uid;
+      })
+    )
+  );
+
+  let ok = 0, fail = 0;
+  results.forEach((r, i) => {
+    const uid = uids[i];
+    const btn      = document.getElementById(`cbtn-${uid}`);
+    const statusEl = document.getElementById(`status-${uid}`);
+    if (r.status === 'fulfilled') {
+      ok++;
+      if (btn)      { btn.classList.remove('canceling'); btn.classList.add('done'); btn.textContent = '✓ Canceled'; }
+      if (statusEl) { statusEl.innerHTML = statusBadge('CANCELED'); }
+      if (cache[currentPage]) {
+        const d = cache[currentPage].deployments.find(x => x.uid === uid);
+        if (d) d.state = 'CANCELED';
+      }
+    } else {
+      fail++;
+      if (btn) { btn.disabled = false; btn.classList.remove('canceling'); btn.textContent = '✕ Cancel'; }
+    }
+  });
+
+  if (ok > 0 && fail === 0) showToast(`Canceled ${ok} deployment${ok > 1 ? 's' : ''} ✓`);
+  else if (ok > 0)           showToast(`${ok} canceled, ${fail} failed`, true);
+  else                       showToast(`Failed to cancel ${fail} deployment${fail > 1 ? 's' : ''}`, true);
+
+  updateGroupCancelButtons();
+}
+
+function updateGroupCancelButtons() {
+  document.querySelectorAll('.commit-group').forEach(groupEl => {
+    const actionsEl = groupEl.querySelector('.commit-header-actions');
+    if (!actionsEl) return;
+    // Collect active uids from row-level buttons that are still cancellable
+    const rowBtns = groupEl.querySelectorAll('tbody .cancel-btn:not(.done):not(:disabled)');
+    const uids = Array.from(rowBtns).map(b => b.dataset.uid).filter(Boolean);
+    if (uids.length > 0) {
+      const k = regCancel(uids, `Cancel all ${uids.length} active deployment${uids.length > 1 ? 's' : ''} in this commit?`);
+      const newBtn = document.createElement('button');
+      newBtn.className = 'cancel-btn';
+      newBtn.title = 'Cancel all active deployments in this commit';
+      newBtn.textContent = `✕ Cancel all (${uids.length})`;
+      newBtn.addEventListener('click', () => confirmCancel(k));
+      actionsEl.replaceChildren(newBtn);
+    } else {
+      actionsEl.replaceChildren();
+    }
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function statusBadge(state) {
+  const m = { READY:['badge-ready','Ready'], BUILDING:['badge-building','Building'],
+              ERROR:['badge-error','Error'], QUEUED:['badge-queued','Queued'],
+              CANCELED:['badge-error','Canceled'] };
+  const [cls, label] = m[state] || ['badge-queued', state];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function timeAgo(ms) {
+  if (!ms) return '—';
+  const diff = Date.now() - ms, s = Math.floor(diff/1000);
+  if (s < 60)  return `${s}s ago`;
+  const m = Math.floor(s/60);
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m/60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h/24);
+  if (d < 30)  return `${d}d ago`;
+  return new Date(ms).toLocaleDateString();
+}
+
+function esc(str = '') {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setMain(html) { document.getElementById('mainArea').innerHTML = html; }
+
+let _toast;
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = err ? 'show err' : 'show';
+  clearTimeout(_toast); _toast = setTimeout(() => t.className = '', 2800);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tokenInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startFresh();
+  });
+  let _sb;
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQ = e.target.value;
+    clearTimeout(_sb);
+    _sb = setTimeout(() => {
+      if (cache[currentPage]) renderGroups(cache[currentPage].deployments);
+    }, 200);
+  });
+});
+</script>
+</body>
+</html>
