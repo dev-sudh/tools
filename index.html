@@ -1,429 +1,1078 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vercel Deployments</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #0a0a0a;
-      --surface: #111111;
-      --surface2: #181818;
-      --surface3: #1e1e1e;
-      --border: #1f1f1f;
-      --border-bright: #2e2e2e;
-      --text: #efefef;
-      --muted: #555;
-      --green: #00e599;
-      --green-dim: rgba(0,229,153,0.08);
-      --yellow: #f5a623;
-      --yellow-dim: rgba(245,166,35,0.08);
-      --red: #ff4f4f;
-      --red-dim: rgba(255,79,79,0.08);
-      --blue: #4f8ef7;
-      --blue-dim: rgba(79,142,247,0.08);
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Vercel Deployments</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  /* surfaces */
+  --color-bg:           #0f0f0f;
+  --color-surface:      #1a1a1a;
+  --color-surface-2:    #222222;
+  --color-surface-3:    #2a2a2a;
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+  /* borders */
+  --color-border:       #333333;
+  --color-border-light: #444444;
 
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
-      background-size: 44px 44px;
-      pointer-events: none; z-index: 0;
-    }
+  /* text — high contrast */
+  --color-text-primary:   #f0f0f0;
+  --color-text-secondary: #b0b0b0;
+  --color-text-disabled:  #666666;
 
-    .container {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 0 24px 100px;
-      position: relative; z-index: 1;
-    }
+  /* brand */
+  --color-blue:       #4d9ef7;
+  --color-blue-dim:   rgba(77,158,247,0.12);
+  --color-green:      #3ecf8e;
+  --color-green-dim:  rgba(62,207,142,0.12);
+  --color-yellow:     #f0b429;
+  --color-yellow-dim: rgba(240,180,41,0.12);
+  --color-red:        #f87171;
+  --color-red-dim:    rgba(248,113,113,0.12);
+  --color-purple:     #a78bfa;
 
-    /* Header */
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 28px 0 32px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 32px;
-      gap: 16px; flex-wrap: wrap;
-    }
+  /* material elevation */
+  --shadow-1: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 3px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+  --shadow-3: 0 10px 20px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4);
 
-    .logo { display: flex; align-items: center; gap: 12px; }
-    .logo svg { width: 24px; height: 24px; fill: var(--text); }
-    .logo-text { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
-    .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 3px; }
+  /* radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* type */
+  --font-body: 'Roboto', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
 
-    .token-field {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--surface); border: 1px solid var(--border-bright);
-      border-radius: 6px; padding: 7px 12px; font-size: 12px;
-    }
-    .token-field label { color: var(--muted); white-space: nowrap; font-size: 10px; letter-spacing: 0.1em; }
-    .token-field input {
-      background: transparent; border: none; outline: none;
-      color: var(--text); font-family: 'JetBrains Mono', monospace;
-      font-size: 12px; width: 210px;
-    }
-    .token-field input::placeholder { color: #383838; }
+  /* spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
 
-    .btn {
-      background: var(--text); color: var(--bg);
-      border: none; border-radius: 6px; padding: 8px 18px;
-      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
-    }
-    .btn:hover { opacity: 0.82; }
-    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Stats Bar */
-    .stats-bar {
-      display: grid; grid-template-columns: repeat(4,1fr);
-      gap: 1px; background: var(--border);
-      border: 1px solid var(--border); border-radius: 8px;
-      overflow: hidden; margin-bottom: 28px;
-    }
-    .stat { background: var(--surface); padding: 18px 22px; display: flex; flex-direction: column; gap: 5px; }
-    .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
-    .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-    /* Controls */
-    .controls { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
-    .search-wrap { position: relative; flex: 1; min-width: 180px; }
-    .search-wrap input {
-      width: 100%; background: var(--surface); border: 1px solid var(--border-bright);
-      border-radius: 6px; padding: 8px 12px 8px 34px;
-      color: var(--text); font-family: 'JetBrains Mono', monospace;
-      font-size: 12px; outline: none; transition: border-color 0.2s;
-    }
-    .search-wrap input:focus { border-color: #444; }
-    .search-wrap input::placeholder { color: #383838; }
-    .search-icon {
-      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-      color: var(--muted); font-size: 14px; pointer-events: none;
-    }
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg) 80px;
+}
 
-    .filter-btn {
-      background: var(--surface); border: 1px solid var(--border-bright);
-      border-radius: 6px; padding: 8px 13px;
-      color: var(--muted); font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.05em;
-    }
-    .filter-btn:hover, .filter-btn.active { border-color: #555; color: var(--text); }
-    .filter-btn.active { background: var(--surface2); }
+/* ═══════════════════════════════════════
+   APP BAR  (Material top bar)
+═══════════════════════════════════════ */
+.app-bar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-xl);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 
-    /* Commit Group */
-    .commit-group { margin-bottom: 18px; animation: groupIn 0.3s ease both; }
-    @keyframes groupIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.app-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
 
-    .commit-header {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 13px 16px;
-      background: var(--surface2);
-      border: 1px solid var(--border-bright);
-      border-radius: 8px 8px 0 0; border-bottom: none;
-    }
+.app-bar__logo {
+  width: 22px;
+  height: 22px;
+  fill: var(--color-text-primary);
+}
 
-    .commit-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--border-bright);
-      margin-top: 6px; flex-shrink: 0;
-    }
+.app-bar__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
 
-    .commit-info { flex: 1; min-width: 0; }
+.app-bar__subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
 
-    .commit-message {
-      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
-      color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 680px;
-    }
+.app-bar__spacer { flex: 1; }
 
-    .commit-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.app-bar__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
 
-    .commit-sha { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-    .commit-sha span { color: #666; }
+/* ═══════════════════════════════════════
+   TOKEN INPUT  (Material outlined input)
+═══════════════════════════════════════ */
+.token-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  transition: border-color 0.2s;
+}
 
-    .commit-branch {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: var(--surface3); border: 1px solid var(--border-bright);
-      border-radius: 4px; padding: 2px 8px; font-size: 10px; color: var(--muted);
-    }
+.token-input-wrap:focus-within {
+  border-color: var(--color-blue);
+}
 
-    .commit-time { font-size: 10px; color: var(--muted); }
+.token-input-wrap__label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 
-    .deploy-count {
-      font-size: 10px; color: var(--muted);
-      background: var(--surface3); border: 1px solid var(--border-bright);
-      border-radius: 100px; padding: 1px 8px;
-    }
+.token-input-wrap__input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 220px;
+}
 
-    /* Table inside commit group */
-    .group-table-wrap {
-      border: 1px solid var(--border-bright);
-      border-radius: 0 0 8px 8px; overflow: hidden;
-    }
+.token-input-wrap__input::placeholder {
+  color: var(--color-text-disabled);
+}
 
-    table { width: 100%; border-collapse: collapse; }
+.token-input-wrap__saved {
+  font-size: 10px;
+  color: var(--color-green);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  display: none;
+  align-items: center;
+  gap: 3px;
+}
 
-    thead tr { background: var(--surface); border-bottom: 1px solid var(--border-bright); }
-    th {
-      text-align: left; padding: 9px 16px;
-      font-size: 10px; color: var(--muted);
-      letter-spacing: 0.12em; text-transform: uppercase; font-weight: 400; white-space: nowrap;
-    }
+.token-input-wrap__saved--visible {
+  display: flex;
+}
 
-    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: var(--surface2); }
+/* ═══════════════════════════════════════
+   BUTTONS  (Material variants)
+═══════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
 
-    td { padding: 11px 16px; font-size: 12px; vertical-align: middle; }
+.btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
-    .project-name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px; color: var(--text); }
+.btn--contained {
+  background: var(--color-blue);
+  color: #ffffff;
+  box-shadow: var(--shadow-1);
+}
 
-    .url-link { color: var(--muted); text-decoration: none; font-size: 11px; transition: color 0.15s; }
-    .url-link:hover { color: var(--text); text-decoration: underline; }
+.btn--contained:hover {
+  background: #6aaef9;
+  box-shadow: var(--shadow-2);
+}
 
-    .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 9px; border-radius: 100px;
-      font-size: 10px; font-weight: 500; letter-spacing: 0.04em;
-    }
-    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .badge-ready    { background: var(--green-dim); color: var(--green); }
-    .badge-ready::before { background: var(--green); box-shadow: 0 0 5px var(--green); }
-    .badge-building { background: var(--yellow-dim); color: var(--yellow); }
-    .badge-building::before { background: var(--yellow); animation: pulse 1s infinite; }
-    .badge-error    { background: var(--red-dim); color: var(--red); }
-    .badge-error::before { background: var(--red); }
-    .badge-queued   { background: var(--blue-dim); color: var(--blue); }
-    .badge-queued::before { background: var(--blue); }
-    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.35} }
+.btn--outlined {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+}
 
-    .env-tag {
-      background: var(--surface3); border: 1px solid var(--border-bright);
-      border-radius: 3px; padding: 1px 7px;
-      font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em;
-    }
+.btn--outlined:hover {
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+  background: rgba(255,255,255,0.04);
+}
 
-    .time-ago { color: var(--muted); font-size: 11px; }
+.btn--outlined-danger {
+  background: transparent;
+  color: var(--color-red);
+  border: 1px solid rgba(248,113,113,0.4);
+}
 
-    /* Cancel buttons */
-    .cancel-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: transparent;
-      border: 1px solid #3a1a1a;
-      border-radius: 5px; padding: 3px 10px;
-      color: #884444; font-family: 'JetBrains Mono', monospace;
-      font-size: 10px; letter-spacing: 0.04em;
-      cursor: pointer; transition: all 0.15s; white-space: nowrap;
-    }
-    .cancel-btn:hover:not(:disabled) {
-      border-color: var(--red); color: var(--red);
-      background: var(--red-dim);
-    }
-    .cancel-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .cancel-btn.canceling {
-      border-color: #553333; color: #553333; cursor: wait;
-    }
-    .cancel-btn.done {
-      border-color: #2a2a2a; color: var(--muted); cursor: default;
-    }
+.btn--outlined-danger:hover {
+  background: var(--color-red-dim);
+  border-color: var(--color-red);
+}
 
-    /* Group cancel lives in header right side */
-    .commit-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; padding-left: 12px; }
+.btn--outlined-success {
+  background: transparent;
+  color: var(--color-green);
+  border: 1px solid rgba(62,207,142,0.4);
+}
 
-    /* Confirm overlay */
-    .confirm-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999; animation: fadeIn 0.15s ease;
-    }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-    .confirm-box {
-      background: var(--surface2); border: 1px solid var(--border-bright);
-      border-radius: 10px; padding: 28px 32px; max-width: 380px; width: 90%;
-      animation: slideUp 0.18s ease;
-    }
-    @keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
-    .confirm-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-    .confirm-sub { font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
-    .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
-    .confirm-no {
-      background: transparent; border: 1px solid var(--border-bright);
-      border-radius: 5px; padding: 7px 16px;
-      color: var(--muted); font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; cursor: pointer; transition: all 0.15s;
-    }
-    .confirm-no:hover { border-color: #555; color: var(--text); }
-    .confirm-yes {
-      background: var(--red-dim); border: 1px solid var(--red);
-      border-radius: 5px; padding: 7px 16px;
-      color: var(--red); font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
-    }
-    .confirm-yes:hover { background: rgba(255,79,79,0.18); }
+.btn--outlined-success:hover {
+  background: var(--color-green-dim);
+  border-color: var(--color-green);
+}
 
-    /* State boxes */
-    .state-box {
-      text-align: center; padding: 72px 24px;
-      border: 1px dashed var(--border-bright); border-radius: 8px;
-    }
-    .state-box .icon { font-size: 32px; margin-bottom: 14px; }
-    .state-box .title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .state-box .sub { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.btn--text {
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 6px 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
 
-    .spinner {
-      display: inline-block; width: 16px; height: 16px;
-      border: 2px solid var(--border-bright); border-top-color: var(--text);
-      border-radius: 50%; animation: spin 0.65s linear infinite;
-      vertical-align: middle; margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+.btn--text:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--color-text-primary);
+}
 
-    /* Pager */
-    .pager {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 20px 0 0; font-size: 11px; color: var(--muted);
-    }
-    .page-btns { display: flex; gap: 6px; }
-    .page-btn {
-      background: var(--surface); border: 1px solid var(--border-bright);
-      border-radius: 5px; padding: 6px 14px;
-      color: var(--muted); font-family: 'JetBrains Mono', monospace;
-      font-size: 11px; cursor: pointer; transition: all 0.15s;
-    }
-    .page-btn:hover:not(:disabled) { border-color: #555; color: var(--text); }
-    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn--sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
 
-    .page-dots { display: flex; gap: 5px; align-items: center; }
-    .page-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--border-bright); cursor: pointer; transition: background 0.15s;
-    }
-    .page-dot.active { background: var(--text); }
-    .page-dot:hover { background: #555; }
+/* state variants for action buttons */
+.btn--canceling {
+  opacity: 0.6;
+  cursor: wait;
+  pointer-events: none;
+}
 
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 22px; right: 22px;
-      background: var(--surface); border: 1px solid var(--border-bright);
-      border-radius: 7px; padding: 11px 16px;
-      font-size: 12px; color: var(--text);
-      z-index: 999; opacity: 0; transform: translateY(8px);
-      transition: all 0.22s; pointer-events: none;
-    }
-    #toast.show { opacity: 1; transform: translateY(0); }
-    #toast.err  { border-color: var(--red); color: var(--red); }
+.btn--canceled {
+  color: var(--color-text-disabled) !important;
+  border-color: var(--color-border) !important;
+  background: transparent !important;
+  cursor: default;
+  pointer-events: none;
+}
 
-    @media (max-width: 680px) {
-      .stats-bar { grid-template-columns: repeat(2,1fr); }
-      .token-field input { width: 140px; }
-      th:nth-child(4), td:nth-child(4) { display: none; }
-    }
-  </style>
+.btn--deployed {
+  color: var(--color-green) !important;
+  border-color: rgba(62,207,142,0.4) !important;
+  background: var(--color-green-dim) !important;
+  cursor: default;
+  pointer-events: none;
+}
+
+.btn--deploying {
+  opacity: 0.6;
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════
+   STATS BAR  (Material cards)
+═══════════════════════════════════════ */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.stat-card__value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+
+.stat-card__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stat-card--ready   .stat-card__value { color: var(--color-green); }
+.stat-card--building .stat-card__value { color: var(--color-yellow); }
+.stat-card--error   .stat-card__value { color: var(--color-red); }
+
+/* ═══════════════════════════════════════
+   TOOLBAR  (filter + search)
+═══════════════════════════════════════ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.toolbar__search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.toolbar__search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-disabled);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.toolbar__search-input {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px 8px 36px;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.toolbar__search-input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.toolbar__search-input:focus {
+  border-color: var(--color-blue);
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  padding: 5px 14px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  border-color: var(--color-blue);
+  color: var(--color-blue);
+  background: var(--color-blue-dim);
+}
+
+.filter-chip--active {
+  background: var(--color-blue-dim);
+  border-color: var(--color-blue);
+  color: var(--color-blue);
+}
+
+/* ═══════════════════════════════════════
+   COMMIT GROUP  (Material card)
+═══════════════════════════════════════ */
+.commit-group {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+  animation: group-appear 0.25s ease both;
+}
+
+@keyframes group-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* commit group header */
+.commit-group__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.commit-group__indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border-light);
+  border: 2px solid var(--color-border-light);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.commit-group__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.commit-group__message {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 640px;
+  letter-spacing: 0.01em;
+}
+
+.commit-group__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.commit-group__sha {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-blue);
+  background: var(--color-blue-dim);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+
+.commit-group__branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-purple);
+  background: rgba(167,139,250,0.1);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+
+.commit-group__author {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.commit-group__time {
+  font-size: 12px;
+  color: var(--color-text-disabled);
+}
+
+.commit-group__count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.commit-group__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: var(--space-md);
+}
+
+/* ═══════════════════════════════════════
+   DATA TABLE  (Material table)
+═══════════════════════════════════════ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table__head {
+  background: var(--color-surface-3);
+}
+
+.data-table__head th {
+  text-align: left;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table__body tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+
+.data-table__body tr:last-child {
+  border-bottom: none;
+}
+
+.data-table__body tr:hover {
+  background: var(--color-surface-2);
+}
+
+.data-table__body td {
+  padding: 12px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.cell-project__name {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.cell-url__link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-blue);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.cell-url__link:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+.cell-env__tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.cell-age {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.cell-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: nowrap;
+}
+
+/* ═══════════════════════════════════════
+   STATUS CHIPS  (Material chips)
+═══════════════════════════════════════ */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.status-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-chip--ready {
+  background: var(--color-green-dim);
+  color: var(--color-green);
+}
+.status-chip--ready .status-chip__dot {
+  background: var(--color-green);
+  box-shadow: 0 0 6px var(--color-green);
+}
+
+.status-chip--building {
+  background: var(--color-yellow-dim);
+  color: var(--color-yellow);
+}
+.status-chip--building .status-chip__dot {
+  background: var(--color-yellow);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.status-chip--error, .status-chip--canceled {
+  background: var(--color-red-dim);
+  color: var(--color-red);
+}
+.status-chip--error .status-chip__dot,
+.status-chip--canceled .status-chip__dot {
+  background: var(--color-red);
+}
+
+.status-chip--queued {
+  background: var(--color-blue-dim);
+  color: var(--color-blue);
+}
+.status-chip--queued .status-chip__dot {
+  background: var(--color-blue);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ═══════════════════════════════════════
+   PAGER
+═══════════════════════════════════════ */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) 0 0;
+}
+
+.pager__info {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.pager__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.pager__dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.pager__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border-light);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pager__dot--active {
+  background: var(--color-blue);
+  width: 20px;
+  border-radius: 4px;
+}
+
+.pager__dot:hover:not(.pager__dot--active) {
+  background: var(--color-text-secondary);
+}
+
+.pager__btns {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* ═══════════════════════════════════════
+   MODAL  (Material dialog)
+═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: overlay-in 0.15s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  padding: var(--space-xl);
+  width: 90%;
+  max-width: 480px;
+  animation: modal-in 0.2s ease;
+}
+
+@keyframes modal-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal__title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.modal__subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+  line-height: 1.6;
+}
+
+.modal__divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-md) 0;
+}
+
+.modal__field {
+  margin-bottom: var(--space-md);
+}
+
+.modal__field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.modal__field-input,
+.modal__field-select {
+  width: 100%;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal__field-input:focus,
+.modal__field-select:focus {
+  border-color: var(--color-blue);
+}
+
+.modal__field-select option {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.modal__branch-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.modal__branch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.modal__branch-pill:hover,
+.modal__branch-pill--selected {
+  border-color: var(--color-blue);
+  color: var(--color-blue);
+  background: var(--color-blue-dim);
+}
+
+.modal__actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-lg);
+}
+
+/* ═══════════════════════════════════════
+   EMPTY / LOADING / ERROR STATES
+═══════════════════════════════════════ */
+.state-card {
+  text-align: center;
+  padding: 64px var(--space-lg);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.state-card__icon {
+  font-size: 40px;
+  margin-bottom: var(--space-md);
+  color: var(--color-text-disabled);
+}
+
+.state-card__title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.state-card__sub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════
+   TOAST  (Material snackbar)
+═══════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #323232;
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 400;
+  z-index: 9998;
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  white-space: nowrap;
+  max-width: 420px;
+}
+
+.toast--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.toast--error   { background: #c62828; }
+.toast--success { background: #2e7d32; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .token-input-wrap__input { width: 150px; }
+  .data-table__head th:nth-child(4),
+  .data-table__body td:nth-child(4) { display: none; }
+  .commit-group__message { max-width: 260px; }
+}
+
+@media (max-width: 480px) {
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .app-bar { padding: var(--space-sm) var(--space-md); }
+}
+</style>
 </head>
 <body>
-<div class="container">
 
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z"/></svg>
-      <div>
-        <div class="logo-text">Vercel</div>
-        <div class="logo-sub">Deployments</div>
-      </div>
+<!-- ═══════════════════════════════════════ APP BAR ═══════════════════════════════════════ -->
+<header class="app-bar">
+  <div class="app-bar__brand">
+    <svg class="app-bar__logo" viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg">
+      <path d="M37.5274 0L75.0548 65H0L37.5274 0Z"/>
+    </svg>
+    <div>
+      <div class="app-bar__title">Vercel</div>
+      <div class="app-bar__subtitle">Deployments</div>
     </div>
-    <div class="header-right">
-      <div class="token-field">
-        <label>TOKEN</label>
-        <input id="tokenInput" type="password" placeholder="vercel_••••••••••••••" autocomplete="off" />
-      </div>
-      <button class="btn" id="fetchBtn" onclick="startFresh()">Fetch</button>
-    </div>
-  </header>
+  </div>
 
-  <!-- Stats -->
+  <div class="app-bar__spacer"></div>
+
+  <div class="app-bar__controls">
+    <div class="token-input-wrap" id="tokenWrap">
+      <span class="token-input-wrap__label">Token</span>
+      <input
+        class="token-input-wrap__input"
+        id="tokenInput"
+        type="password"
+        placeholder="vercel_••••••••••••••"
+        autocomplete="off"
+      />
+      <span class="token-input-wrap__saved" id="savedPill">✓ saved</span>
+    </div>
+    <button class="btn btn--outlined btn--sm" id="clearBtn" style="display:none">Clear</button>
+    <button class="btn btn--contained btn--sm" id="fetchBtn">Fetch</button>
+  </div>
+</header>
+
+<div class="page-wrapper">
+
+  <!-- Stats Bar -->
   <div class="stats-bar" id="statsBar" style="display:none">
-    <div class="stat">
-      <div class="stat-value" id="statTotal">—</div>
-      <div class="stat-label">This page</div>
+    <div class="stat-card">
+      <div class="stat-card__value" id="statTotal">—</div>
+      <div class="stat-card__label">This page</div>
     </div>
-    <div class="stat">
-      <div class="stat-value" style="color:var(--green)" id="statReady">—</div>
-      <div class="stat-label">Ready</div>
+    <div class="stat-card stat-card--ready">
+      <div class="stat-card__value" id="statReady">—</div>
+      <div class="stat-card__label">Ready</div>
     </div>
-    <div class="stat">
-      <div class="stat-value" style="color:var(--yellow)" id="statBuilding">—</div>
-      <div class="stat-label">Building</div>
+    <div class="stat-card stat-card--building">
+      <div class="stat-card__value" id="statBuilding">—</div>
+      <div class="stat-card__label">Building</div>
     </div>
-    <div class="stat">
-      <div class="stat-value" style="color:var(--red)" id="statError">—</div>
-      <div class="stat-label">Error</div>
+    <div class="stat-card stat-card--error">
+      <div class="stat-card__value" id="statError">—</div>
+      <div class="stat-card__label">Error</div>
     </div>
   </div>
 
-  <!-- Controls -->
-  <div class="controls" id="controls" style="display:none">
-    <div class="search-wrap">
-      <span class="search-icon">⌕</span>
-      <input id="searchInput" type="text" placeholder="Search project, URL or branch…" />
+  <!-- Toolbar -->
+  <div class="toolbar" id="toolbar" style="display:none">
+    <div class="toolbar__search">
+      <span class="toolbar__search-icon">⌕</span>
+      <input class="toolbar__search-input" id="searchInput" type="text" placeholder="Search by project, URL, or branch…"/>
     </div>
-    <button class="filter-btn active" data-filter="ALL"      onclick="setFilter(this)">All</button>
-    <button class="filter-btn"        data-filter="READY"    onclick="setFilter(this)">Ready</button>
-    <button class="filter-btn"        data-filter="BUILDING" onclick="setFilter(this)">Building</button>
-    <button class="filter-btn"        data-filter="ERROR"    onclick="setFilter(this)">Error</button>
-    <button class="filter-btn"        data-filter="QUEUED"   onclick="setFilter(this)">Queued</button>
+    <button class="filter-chip filter-chip--active" data-filter="ALL">All</button>
+    <button class="filter-chip" data-filter="READY">Ready</button>
+    <button class="filter-chip" data-filter="BUILDING">Building</button>
+    <button class="filter-chip" data-filter="ERROR">Error</button>
+    <button class="filter-chip" data-filter="QUEUED">Queued</button>
   </div>
 
-  <!-- Main area -->
+  <!-- Main content -->
   <div id="mainArea">
-    <div class="state-box">
-      <div class="icon">▲</div>
-      <div class="title">Enter your Vercel token</div>
-      <div class="sub">
-        Generate one at <strong>vercel.com/account/tokens</strong><br/>
-        Your token stays in the browser and is never stored.<br/>
-        Deployments are fetched one page at a time — 20 per page.
+    <div class="state-card">
+      <div class="state-card__icon">▲</div>
+      <div class="state-card__title">Connect to Vercel</div>
+      <div class="state-card__sub">
+        Enter your API token from <strong style="color:var(--color-text-primary)">vercel.com/account/tokens</strong><br/>
+        Your token is saved in a cookie and restored on refresh.<br/>
+        Deployments are paginated — 20 per page, fetched on demand.
       </div>
     </div>
   </div>
 
   <!-- Pager -->
   <div class="pager" id="pager" style="display:none">
-    <span id="pageInfo"></span>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="page-dots" id="pageDots"></div>
-      <div class="page-btns">
-        <button class="page-btn" id="prevBtn" onclick="goPage(currentPage-1)">← Prev</button>
-        <button class="page-btn" id="nextBtn" onclick="goPage(currentPage+1)">Next →</button>
+    <span class="pager__info" id="pageInfo"></span>
+    <div class="pager__right">
+      <div class="pager__dots" id="pageDots"></div>
+      <div class="pager__btns">
+        <button class="btn btn--outlined btn--sm" id="prevBtn">← Prev</button>
+        <button class="btn btn--outlined btn--sm" id="nextBtn">Next →</button>
       </div>
     </div>
   </div>
 
 </div>
-<div id="toast"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────
-const PAGE_SIZE = 20;
-const MAX_DOTS  = 8;
+'use strict';
 
-// ── State ─────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const PAGE_SIZE   = 20;
+const MAX_DOTS    = 8;
+const COOKIE_NAME = 'vcl_token';
+const COOKIE_DAYS = 60;
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
 let token         = '';
 let currentPage   = 1;
 let totalFetched  = 0;
@@ -431,47 +1080,107 @@ let hasMore       = true;
 let currentFilter = 'ALL';
 let searchQ       = '';
 
-// cache[pageNumber] = { deployments: [], nextCursor: string|null }
-const cache = {};
+// page cache: cache[n] = { deployments[], nextCursor }
+const pageCache = {};
 
-// ── Entry ─────────────────────────────────────────────────────
+// Action registry — avoids serialising data into onclick attrs
+const actionRegistry = new Map();
+let   _regSeq = 0;
+function registerAction(payload) {
+  const id = ++_regSeq;
+  actionRegistry.set(id, payload);
+  return id;
+}
+
+/* ═══════════════════════════════════════════
+   COOKIE HELPERS
+═══════════════════════════════════════════ */
+function cookieSet(name, value, days) {
+  const expires = new Date(Date.now() + days * 86400000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Strict`;
+}
+
+function cookieGet(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function cookieClear(name) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+}
+
+/* ═══════════════════════════════════════════
+   TOKEN PERSISTENCE
+═══════════════════════════════════════════ */
+function tokenSave(t) {
+  cookieSet(COOKIE_NAME, t, COOKIE_DAYS);
+  document.getElementById('savedPill').classList.add('token-input-wrap__saved--visible');
+  document.getElementById('clearBtn').style.display = '';
+}
+
+function tokenClear() {
+  cookieClear(COOKIE_NAME);
+  token = '';
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('savedPill').classList.remove('token-input-wrap__saved--visible');
+  document.getElementById('clearBtn').style.display = 'none';
+  showToast('Token cleared');
+}
+
+function tokenRestore() {
+  const saved = cookieGet(COOKIE_NAME);
+  if (saved) {
+    document.getElementById('tokenInput').value = saved;
+    document.getElementById('savedPill').classList.add('token-input-wrap__saved--visible');
+    document.getElementById('clearBtn').style.display = '';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ENTRY / FETCH FLOW
+═══════════════════════════════════════════ */
 async function startFresh() {
-  token = document.getElementById('tokenInput').value.trim();
-  if (!token) { showToast('Paste your Vercel API token first.', true); return; }
-  Object.keys(cache).forEach(k => delete cache[k]);
+  const input = document.getElementById('tokenInput').value.trim();
+  if (!input) { showToast('Enter a Vercel API token first', 'error'); return; }
+
+  token = input;
+  tokenSave(token);
+
+  // reset cache
+  Object.keys(pageCache).forEach(k => delete pageCache[k]);
   currentPage = 1; totalFetched = 0; hasMore = true;
+
   document.getElementById('statsBar').style.display = 'grid';
-  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('toolbar').style.display  = 'flex';
+
   await goPage(1);
 }
 
-// ── Navigation ────────────────────────────────────────────────
 async function goPage(n) {
   if (n < 1) return;
-  // Can only advance to a page we have the cursor for
-  if (n > 1 && !cache[n - 1]) return;
-  // Don't go beyond if we know there's no more
-  if (!hasMore && !cache[n]) return;
+  if (n > 1 && !pageCache[n - 1]) return;   // need previous cursor
+  if (!hasMore && !pageCache[n]) return;
   currentPage = n;
   await loadPage(n);
 }
 
-// ── Fetch exactly one page ────────────────────────────────────
 async function loadPage(n) {
-  const btn = document.getElementById('fetchBtn');
-  btn.disabled = true; btn.textContent = 'Loading…';
-  setMain(`<div class="state-box">
-    <div class="icon"><span class="spinner"></span></div>
-    <div class="title">Loading page ${n}…</div>
-    <div class="sub">Fetching up to ${PAGE_SIZE} deployments</div>
-  </div>`);
+  const fetchBtn = document.getElementById('fetchBtn');
+  fetchBtn.disabled = true;
+  fetchBtn.textContent = 'Loading…';
+
+  setMain(`
+    <div class="state-card">
+      <div class="state-card__icon"><span class="spinner"></span></div>
+      <div class="state-card__title">Loading page ${n}…</div>
+      <div class="state-card__sub">Fetching up to ${PAGE_SIZE} deployments from Vercel</div>
+    </div>`);
 
   try {
-    if (!cache[n]) {
-      // Build URL: page 1 = fresh, page N = use cursor stored from page N-1
+    if (!pageCache[n]) {
       let url = `https://api.vercel.com/v6/deployments?limit=${PAGE_SIZE}`;
-      if (n > 1 && cache[n - 1]?.nextCursor) {
-        url += `&until=${cache[n - 1].nextCursor}`;
+      if (n > 1 && pageCache[n - 1]?.nextCursor) {
+        url += `&until=${pageCache[n - 1].nextCursor}`;
       }
 
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -479,178 +1188,450 @@ async function loadPage(n) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error?.message || `HTTP ${res.status}`);
       }
-      const data = await res.json();
+
+      const data        = await res.json();
       const deployments = data.deployments || [];
       const nextCursor  = data.pagination?.next || null;
 
-      hasMore = !!(nextCursor && deployments.length >= PAGE_SIZE);
-      cache[n] = { deployments, nextCursor };
-      totalFetched = Math.max(totalFetched, (n - 1) * PAGE_SIZE + deployments.length);
+      hasMore        = !!(nextCursor && deployments.length >= PAGE_SIZE);
+      pageCache[n]   = { deployments, nextCursor };
+      totalFetched   = Math.max(totalFetched, (n - 1) * PAGE_SIZE + deployments.length);
     }
 
-    const { deployments } = cache[n];
+    const { deployments } = pageCache[n];
     updateStats(deployments);
     renderGroups(deployments);
     updatePager();
-    showToast(`Page ${n} · ${cache[n].deployments.length} deployments`);
+    showToast(`Page ${n} loaded — ${pageCache[n].deployments.length} deployments`, 'success');
   } catch (e) {
-    setMain(`<div class="state-box"><div class="icon">✕</div>
-      <div class="title">Failed to fetch</div>
-      <div class="sub">${esc(e.message)}<br/><br/>Check your token and try again.</div></div>`);
-    showToast(e.message, true);
+    setMain(`
+      <div class="state-card">
+        <div class="state-card__icon">✕</div>
+        <div class="state-card__title">Failed to load</div>
+        <div class="state-card__sub">${esc(e.message)}<br/><br/>Check your token and try again.</div>
+      </div>`);
+    showToast(e.message, 'error');
   }
 
-  btn.disabled = false; btn.textContent = 'Fetch';
+  fetchBtn.disabled = false;
+  fetchBtn.textContent = 'Fetch';
 }
 
-// ── Render: group by commit SHA ───────────────────────────────
+/* ═══════════════════════════════════════════
+   RENDER — group by commit SHA
+═══════════════════════════════════════════ */
 function renderGroups(deployments) {
-  // Apply local filter + search on this page's data
   const q = searchQ.toLowerCase();
   const filtered = deployments.filter(d => {
-    const stateOk = currentFilter === 'ALL' || d.state === currentFilter;
-    const msg = d.meta?.githubCommitMessage || d.meta?.gitlabCommitMessage || '';
+    const stateOk  = currentFilter === 'ALL' || d.state === currentFilter;
+    const msg      = d.meta?.githubCommitMessage || d.meta?.gitlabCommitMessage || '';
     const searchOk = !q || [d.name, d.url, msg, d.meta?.githubCommitRef, d.meta?.branchAlias]
       .filter(Boolean).some(v => v.toLowerCase().includes(q));
     return stateOk && searchOk;
   });
 
-  if (filtered.length === 0) {
-    setMain('<div class="state-box"><div class="icon">○</div><div class="title">No deployments match</div><div class="sub">Adjust filters or search, or try another page.</div></div>');
+  if (!filtered.length) {
+    setMain(`<div class="state-card">
+      <div class="state-card__icon">○</div>
+      <div class="state-card__title">No results</div>
+      <div class="state-card__sub">Adjust filters or search query, or load another page.</div>
+    </div>`);
     return;
   }
 
-  // Build ordered groups by commit key
-  const order = [];
-  const map   = new Map();
+  // Build commit groups preserving insertion order
+  const groupOrder = [];
+  const groupMap   = new Map();
 
   filtered.forEach(d => {
-    const sha = d.meta?.githubCommitSha
-             || d.meta?.gitlabCommitSha
-             || d.meta?.bitbucketCommitSha
-             || null;
-
-    // Fallback key: group by project + commit message, otherwise by uid
+    const sha = d.meta?.githubCommitSha || d.meta?.gitlabCommitSha || d.meta?.bitbucketCommitSha || null;
     const key = sha
-      || (d.meta?.githubCommitMessage
-          ? `msg::${d.name}::${d.meta.githubCommitMessage}`
-          : `uid::${d.uid}`);
+      || (d.meta?.githubCommitMessage ? `msg::${d.name}::${d.meta.githubCommitMessage}` : `uid::${d.uid}`);
 
-    if (!map.has(key)) {
-      map.set(key, {
+    if (!groupMap.has(key)) {
+      groupMap.set(key, {
         sha,
-        short: sha ? sha.slice(0, 7) : null,
-        message: d.meta?.githubCommitMessage
-               || d.meta?.gitlabCommitMessage
-               || d.meta?.bitbucketCommitMessage
-               || '(no commit message)',
-        branch:  d.meta?.githubCommitRef
-               || d.meta?.branchAlias
-               || d.gitSource?.branch
-               || 'main',
-        author:  d.meta?.githubCommitAuthorName
-               || d.meta?.gitlabCommitAuthorName
-               || '',
+        short:     sha ? sha.slice(0, 7) : null,
+        message:   d.meta?.githubCommitMessage || d.meta?.gitlabCommitMessage || d.meta?.bitbucketCommitMessage || '(no commit message)',
+        branch:    d.meta?.githubCommitRef || d.meta?.branchAlias || d.gitSource?.branch || 'main',
+        author:    d.meta?.githubCommitAuthorName || d.meta?.gitlabCommitAuthorName || '',
         createdAt: d.createdAt,
-        items: [],
+        items:     [],
       });
-      order.push(key);
+      groupOrder.push(key);
     }
-    map.get(key).items.push(d);
+    groupMap.get(key).items.push(d);
   });
 
-  let html = '';
-  order.forEach((key, gi) => {
-    const g = map.get(key);
+  // Collect unique project+branch pairs seen this page for the deploy modal
+  const seenBranches = new Set();
+  filtered.forEach(d => {
+    const br = d.meta?.githubCommitRef || d.meta?.branchAlias || d.gitSource?.branch;
+    if (br) seenBranches.add(`${d.name}:::${br}`);
+  });
+  window._seenBranches = seenBranches;
 
-    const cancellable = g.items.filter(d => d.state === 'BUILDING' || d.state === 'QUEUED');
+  // Build HTML
+  let html = '';
+  groupOrder.forEach((key, gi) => {
+    const g = groupMap.get(key);
+    const cancellableUids = g.items
+      .filter(d => d.state === 'BUILDING' || d.state === 'QUEUED')
+      .map(d => d.uid);
 
     const rows = g.items.map(d => {
+      const branch    = d.meta?.githubCommitRef || d.meta?.branchAlias || d.gitSource?.branch || 'main';
       const canCancel = d.state === 'BUILDING' || d.state === 'QUEUED';
-      const cancelCell = canCancel
-        ? `<button class="cancel-btn" id="cbtn-${d.uid}" data-uid="${d.uid}" data-name="${esc(d.name)}">✕ Cancel</button>`
-        : `<span style="font-size:10px;color:var(--border-bright)">—</span>`;
-      return `
-      <tr id="row-${d.uid}">
-        <td><span class="project-name">${esc(d.name)}</span></td>
-        <td id="status-${d.uid}">${statusBadge(d.state)}</td>
-        <td><a class="url-link" href="https://${esc(d.url)}" target="_blank" rel="noopener">${esc(d.url)}</a></td>
-        <td><span class="env-tag">${esc(d.target || 'preview')}</span></td>
-        <td class="time-ago">${timeAgo(d.createdAt)}</td>
-        <td>${cancelCell}</td>
+
+      const cancelHtml = canCancel
+        ? `<button class="btn btn--outlined-danger btn--sm" id="cbtn-${d.uid}" data-uid="${d.uid}" data-name="${esc(d.name)}">✕ Cancel</button>`
+        : `<span style="font-size:11px;color:var(--color-text-disabled)">—</span>`;
+
+      const redeployHtml = `<button class="btn btn--outlined-success btn--sm" id="rbtn-${d.uid}" data-uid="${d.uid}" data-project="${esc(d.name)}" data-branch="${esc(branch)}" title="Redeploy ${esc(d.name)} on branch ${esc(branch)}">↺ Redeploy</button>`;
+
+      return `<tr id="row-${d.uid}">
+        <td><span class="cell-project__name">${esc(d.name)}</span></td>
+        <td id="status-${d.uid}">${statusChip(d.state)}</td>
+        <td><a class="cell-url__link" href="https://${esc(d.url)}" target="_blank" rel="noopener">${esc(d.url)}</a></td>
+        <td><span class="cell-env__tag">${esc(d.target || 'preview')}</span></td>
+        <td class="cell-age">${timeAgo(d.createdAt)}</td>
+        <td><div class="cell-actions">${cancelHtml}${redeployHtml}</div></td>
       </tr>`;
     }).join('');
 
-    const groupCancelPlaceholder = cancellable.length > 0
-      ? `<button class="cancel-btn" data-group-key="${gi}">✕ Cancel all (${cancellable.length})</button>`
+    // Group-level action buttons
+    const groupCancelHtml = cancellableUids.length > 0
+      ? `<button class="btn btn--outlined-danger btn--sm" data-group-cancel="${gi}" data-uids="${esc(cancellableUids.join(','))}">✕ Cancel all (${cancellableUids.length})</button>`
       : '';
 
-    html += `
-      <div class="commit-group" style="animation-delay:${gi * 45}ms">
-        <div class="commit-header">
-          <div class="commit-dot"></div>
-          <div class="commit-info">
-            <div class="commit-message">${esc(g.message)}</div>
-            <div class="commit-meta">
-              ${g.short ? `<span class="commit-sha"><span>${g.short}</span></span>` : ''}
-              <span class="commit-branch">⎇ ${esc(g.branch)}</span>
-              ${g.author ? `<span class="commit-time">${esc(g.author)}</span>` : ''}
-              <span class="commit-time">${timeAgo(g.createdAt)}</span>
-              <span class="deploy-count">${g.items.length} deployment${g.items.length > 1 ? 's' : ''}</span>
-            </div>
+    const groupRedeployHtml = `<button class="btn btn--outlined-success btn--sm" data-group-redeploy="${gi}">↺ Redeploy commit</button>`;
+
+    html += `<div class="commit-group" style="animation-delay:${gi * 40}ms" data-group-idx="${gi}">
+      <div class="commit-group__header">
+        <div class="commit-group__indicator"></div>
+        <div class="commit-group__info">
+          <div class="commit-group__message">${esc(g.message)}</div>
+          <div class="commit-group__meta">
+            ${g.short ? `<span class="commit-group__sha">${g.short}</span>` : ''}
+            <span class="commit-group__branch">⎇ ${esc(g.branch)}</span>
+            ${g.author ? `<span class="commit-group__author">${esc(g.author)}</span>` : ''}
+            <span class="commit-group__time">${timeAgo(g.createdAt)}</span>
+            <span class="commit-group__count">${g.items.length} deployment${g.items.length > 1 ? 's' : ''}</span>
           </div>
-          <div class="commit-header-actions">${groupCancelPlaceholder}</div>
         </div>
-        <div class="group-table-wrap">
-          <table>
-            <thead><tr>
-              <th>Project</th><th>Status</th><th>URL</th><th>Env</th><th>Age</th><th>Action</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
+        <div class="commit-group__actions" id="gactions-${gi}">
+          ${groupRedeployHtml}
+          ${groupCancelHtml}
         </div>
-      </div>`;
+      </div>
+      <table class="data-table">
+        <thead class="data-table__head">
+          <tr>
+            <th>Project</th>
+            <th>Status</th>
+            <th>URL</th>
+            <th>Env</th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody class="data-table__body">${rows}</tbody>
+      </table>
+    </div>`;
   });
 
   setMain(html);
 
-  // Wire up all cancel buttons via addEventListener (avoids onclick/JSON quoting issues)
-  // Per-deployment cancel buttons
-  document.querySelectorAll('.cancel-btn[data-uid]').forEach(btn => {
+  // Wire all buttons via addEventListener — no data serialised into onclick attrs
+  wireButtons(groupOrder, groupMap);
+}
+
+/* ═══════════════════════════════════════════
+   WIRE BUTTONS  (called after DOM is set)
+═══════════════════════════════════════════ */
+function wireButtons(groupOrder, groupMap) {
+  // Individual cancel
+  document.querySelectorAll('[data-uid][id^="cbtn-"]').forEach(btn => {
     const uid  = btn.dataset.uid;
     const name = btn.dataset.name || uid;
-    const k = regCancel([uid], `Cancel deployment of <strong>${name}</strong>?`);
-    btn.addEventListener('click', () => confirmCancel(k));
+    const id   = registerAction({ type: 'cancel', uids: [uid], label: `Cancel deployment of <strong>${name}</strong>?` });
+    btn.addEventListener('click', () => openCancelModal(id));
   });
 
-  // Group-level cancel buttons
-  document.querySelectorAll('.cancel-btn[data-group-key]').forEach(btn => {
-    // Find sibling row buttons in this group to gather uids
-    const groupEl = btn.closest('.commit-group');
-    const rowBtns = groupEl ? groupEl.querySelectorAll('tbody .cancel-btn[data-uid]') : [];
-    const uids = Array.from(rowBtns).map(b => b.dataset.uid).filter(Boolean);
-    if (uids.length > 0) {
-      const k = regCancel(uids, `Cancel all ${uids.length} active deployment${uids.length > 1 ? 's' : ''} in this commit?`);
-      btn.addEventListener('click', () => confirmCancel(k));
+  // Group cancel
+  document.querySelectorAll('[data-group-cancel]').forEach(btn => {
+    const uids = btn.dataset.uids.split(',').filter(Boolean);
+    const id   = registerAction({ type: 'cancel', uids, label: `Cancel all ${uids.length} active deployment${uids.length > 1 ? 's' : ''} in this commit?` });
+    btn.addEventListener('click', () => openCancelModal(id));
+  });
+
+  // Individual redeploy
+  document.querySelectorAll('[data-uid][id^="rbtn-"]').forEach(btn => {
+    const { uid, project, branch } = btn.dataset;
+    const id = registerAction({ type: 'redeploy-single', uid, project, branch });
+    btn.addEventListener('click', () => openRedeployModal(id));
+  });
+
+  // Group redeploy
+  document.querySelectorAll('[data-group-redeploy]').forEach(btn => {
+    const gi  = parseInt(btn.dataset.groupRedeploy);
+    const key = groupOrder[gi];
+    const g   = groupMap.get(key);
+    if (!g) return;
+    const targets = g.items.map(d => ({
+      uid:     d.uid,
+      project: d.name,
+      branch:  d.meta?.githubCommitRef || d.meta?.branchAlias || d.gitSource?.branch || 'main',
+    }));
+    const id = registerAction({ type: 'redeploy-group', targets, message: g.message });
+    btn.addEventListener('click', () => openGroupRedeployModal(id));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CANCEL MODAL
+═══════════════════════════════════════════ */
+function openCancelModal(actionId) {
+  const entry = actionRegistry.get(actionId);
+  if (!entry) return;
+  const { uids, label } = entry;
+
+  const overlay = makeOverlay();
+  const modal   = makeModal();
+  modal.innerHTML = `
+    <div class="modal__title">Cancel Deployment${uids.length > 1 ? 's' : ''}</div>
+    <div class="modal__subtitle">${label}<br/>This action cannot be undone.</div>
+    <div class="modal__actions">
+      <button class="btn btn--outlined" id="mCancelNo">Keep running</button>
+      <button class="btn btn--outlined-danger" id="mCancelYes">✕ Yes, cancel${uids.length > 1 ? ' all' : ''}</button>
+    </div>`;
+
+  modal.querySelector('#mCancelNo').addEventListener('click', () => overlay.remove());
+  modal.querySelector('#mCancelYes').addEventListener('click', () => { overlay.remove(); doCancel(uids); });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function doCancel(uids) {
+  uids.forEach(uid => {
+    const b = document.getElementById(`cbtn-${uid}`);
+    if (b) { b.disabled = true; b.classList.add('btn--canceling'); b.textContent = '⏳ Canceling…'; }
+  });
+
+  const results = await Promise.allSettled(uids.map(uid =>
+    fetch(`https://api.vercel.com/v12/deployments/${uid}/cancel`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${r.status}`); }
+      return uid;
+    })
+  ));
+
+  let ok = 0, fail = 0;
+  results.forEach((r, i) => {
+    const uid    = uids[i];
+    const btn    = document.getElementById(`cbtn-${uid}`);
+    const status = document.getElementById(`status-${uid}`);
+    if (r.status === 'fulfilled') {
+      ok++;
+      if (btn)    { btn.classList.remove('btn--canceling'); btn.classList.add('btn--canceled'); btn.textContent = '✓ Canceled'; }
+      if (status) { status.innerHTML = statusChip('CANCELED'); }
+      const d = pageCache[currentPage]?.deployments.find(x => x.uid === uid);
+      if (d) d.state = 'CANCELED';
+    } else {
+      fail++;
+      if (btn) { btn.disabled = false; btn.classList.remove('btn--canceling'); btn.textContent = '✕ Cancel'; }
+    }
+  });
+
+  if (ok && !fail)    showToast(`${ok} deployment${ok > 1 ? 's' : ''} canceled`, 'success');
+  else if (ok)        showToast(`${ok} canceled, ${fail} failed`, 'error');
+  else                showToast('Cancel failed', 'error');
+
+  refreshGroupCancelButtons();
+}
+
+function refreshGroupCancelButtons() {
+  document.querySelectorAll('.commit-group').forEach(grp => {
+    const actionsEl = grp.querySelector('.commit-group__actions');
+    if (!actionsEl) return;
+    const remaining = Array.from(grp.querySelectorAll('[id^="cbtn-"]:not(.btn--canceled)'))
+      .filter(b => !b.disabled)
+      .map(b => b.dataset.uid)
+      .filter(Boolean);
+
+    const old = actionsEl.querySelector('[data-group-cancel]');
+    if (remaining.length > 0) {
+      const newBtn = document.createElement('button');
+      newBtn.className = 'btn btn--outlined-danger btn--sm';
+      newBtn.textContent = `✕ Cancel all (${remaining.length})`;
+      const id = registerAction({ type: 'cancel', uids: remaining, label: `Cancel all ${remaining.length} active deployment${remaining.length > 1 ? 's' : ''} in this commit?` });
+      newBtn.addEventListener('click', () => openCancelModal(id));
+      if (old) old.replaceWith(newBtn); else actionsEl.appendChild(newBtn);
+    } else {
+      old?.remove();
     }
   });
 }
 
-// ── Stats (for current page) ──────────────────────────────────
-function updateStats(deployments) {
-  const c = s => deployments.filter(d => d.state === s).length;
-  document.getElementById('statTotal').textContent    = deployments.length;
-  document.getElementById('statReady').textContent    = c('READY');
-  document.getElementById('statBuilding').textContent = c('BUILDING');
-  document.getElementById('statError').textContent    = c('ERROR');
+/* ═══════════════════════════════════════════
+   REDEPLOY MODAL — single deployment
+═══════════════════════════════════════════ */
+function openRedeployModal(actionId) {
+  const entry = actionRegistry.get(actionId);
+  if (!entry) return;
+  const { uid, project, branch } = entry;
+
+  // Collect branches seen for this project
+  const projectBranches = Array.from(window._seenBranches || [])
+    .filter(s => s.startsWith(`${project}:::`))
+    .map(s => s.split(':::')[1]);
+
+  // Deduplicate and ensure current branch is first
+  const branches = [...new Set([branch, ...projectBranches])];
+
+  const overlay = makeOverlay();
+  const modal   = makeModal();
+
+  const pillsHtml = branches.map(b =>
+    `<span class="modal__branch-pill${b === branch ? ' modal__branch-pill--selected' : ''}" data-branch="${esc(b)}">⎇ ${esc(b)}</span>`
+  ).join('');
+
+  modal.innerHTML = `
+    <div class="modal__title">Redeploy</div>
+    <div class="modal__subtitle">Trigger a new deployment for <strong style="color:var(--color-text-primary)">${esc(project)}</strong>.</div>
+    <hr class="modal__divider"/>
+    <div class="modal__field">
+      <label class="modal__field-label">Project</label>
+      <input class="modal__field-input" id="rdProject" value="${esc(project)}" readonly/>
+    </div>
+    <div class="modal__field">
+      <label class="modal__field-label">Branch — recently deployed</label>
+      <div class="modal__branch-pills" id="rdPills">${pillsHtml}</div>
+      <input class="modal__field-input" id="rdBranch" value="${esc(branch)}" placeholder="or type a branch…" style="margin-top:8px"/>
+    </div>
+    <div class="modal__actions">
+      <button class="btn btn--outlined" id="rdCancel">Cancel</button>
+      <button class="btn btn--contained" id="rdConfirm">↺ Deploy</button>
+    </div>`;
+
+  // Branch pill selection
+  modal.querySelectorAll('.modal__branch-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      modal.querySelectorAll('.modal__branch-pill').forEach(p => p.classList.remove('modal__branch-pill--selected'));
+      pill.classList.add('modal__branch-pill--selected');
+      modal.querySelector('#rdBranch').value = pill.dataset.branch;
+    });
+  });
+
+  modal.querySelector('#rdCancel').addEventListener('click', () => overlay.remove());
+  modal.querySelector('#rdConfirm').addEventListener('click', () => {
+    const chosenBranch = modal.querySelector('#rdBranch').value.trim() || branch;
+    overlay.remove();
+    doRedeploy(uid, project, chosenBranch);
+  });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ── Pager UI ──────────────────────────────────────────────────
+/* ═══════════════════════════════════════════
+   REDEPLOY MODAL — whole commit group
+═══════════════════════════════════════════ */
+function openGroupRedeployModal(actionId) {
+  const entry = actionRegistry.get(actionId);
+  if (!entry) return;
+  const { targets, message } = entry;
+
+  const overlay = makeOverlay();
+  const modal   = makeModal();
+
+  const rowsHtml = targets.map(t => `
+    <tr style="border-bottom:1px solid var(--color-border)">
+      <td style="padding:8px 0;font-size:13px;color:var(--color-text-primary);font-weight:500">${esc(t.project)}</td>
+      <td style="padding:8px 0 8px 12px">
+        <span class="commit-group__branch" style="font-size:11px">⎇ ${esc(t.branch)}</span>
+      </td>
+    </tr>`).join('');
+
+  modal.innerHTML = `
+    <div class="modal__title">Redeploy Commit</div>
+    <div class="modal__subtitle">Re-trigger deployments for all projects in this commit.</div>
+    <div style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:var(--space-md);font-size:12px;color:var(--color-text-secondary)">${esc(message)}</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:var(--space-md)">${rowsHtml}</table>
+    <div class="modal__actions">
+      <button class="btn btn--outlined" id="grCancel">Cancel</button>
+      <button class="btn btn--contained" id="grConfirm">↺ Redeploy all (${targets.length})</button>
+    </div>`;
+
+  modal.querySelector('#grCancel').addEventListener('click', () => overlay.remove());
+  modal.querySelector('#grConfirm').addEventListener('click', () => {
+    overlay.remove();
+    targets.forEach(t => doRedeploy(t.uid, t.project, t.branch));
+  });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ═══════════════════════════════════════════
+   DO REDEPLOY  (Vercel API)
+═══════════════════════════════════════════ */
+async function doRedeploy(uid, project, branch) {
+  const btn = document.getElementById(`rbtn-${uid}`);
+  if (btn) { btn.disabled = true; btn.classList.add('btn--deploying'); btn.textContent = '⏳ Deploying…'; }
+
+  try {
+    const res = await fetch(`https://api.vercel.com/v13/deployments`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name:   project,
+        gitSource: { type: 'github', ref: branch },
+        source: 'import',
+      }),
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e?.error?.message || `HTTP ${res.status}`);
+    }
+
+    if (btn) { btn.classList.remove('btn--deploying'); btn.classList.add('btn--deployed'); btn.textContent = '✓ Queued'; }
+    showToast(`${project} on ${branch} queued for deployment`, 'success');
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.classList.remove('btn--deploying'); btn.textContent = '↺ Redeploy'; }
+    showToast(`Redeploy failed: ${e.message}`, 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════ */
+function updateStats(deployments) {
+  const count = s => deployments.filter(d => d.state === s).length;
+  document.getElementById('statTotal').textContent    = deployments.length;
+  document.getElementById('statReady').textContent    = count('READY');
+  document.getElementById('statBuilding').textContent = count('BUILDING');
+  document.getElementById('statError').textContent    = count('ERROR');
+}
+
+/* ═══════════════════════════════════════════
+   PAGER
+═══════════════════════════════════════════ */
 function updatePager() {
   document.getElementById('pager').style.display = 'flex';
 
-  const knownPages = Object.keys(cache).filter(k => /^\d+$/.test(k)).length;
-  const showNext   = hasMore || !!cache[currentPage]?.nextCursor;
+  const knownPages = Object.keys(pageCache).filter(k => /^\d+$/.test(k)).length;
+  const showNext   = hasMore || !!pageCache[currentPage]?.nextCursor;
 
   document.getElementById('prevBtn').disabled = currentPage <= 1;
   document.getElementById('nextBtn').disabled = !showNext;
@@ -659,183 +1640,139 @@ function updatePager() {
   document.getElementById('pageInfo').textContent =
     `Page ${currentPage}${knownPages > 1 ? ' of ' + (hasMore ? knownPages + '+' : knownPages) : ''} · ${total} total`;
 
-  // Dots
   const visibleDots = Math.min(knownPages + (hasMore ? 1 : 0), MAX_DOTS);
-  document.getElementById('pageDots').innerHTML = Array.from({ length: visibleDots }, (_, i) => {
-    const p = i + 1;
-    const reachable = !!cache[p] || (p === currentPage + 1 && showNext);
-    return `<div class="page-dot${p === currentPage ? ' active' : ''}"
-      style="${!reachable ? 'opacity:0.35;cursor:default' : ''}"
-      onclick="${reachable ? `goPage(${p})` : ''}"
-      title="Page ${p}"></div>`;
-  }).join('');
+  const dotsEl      = document.getElementById('pageDots');
+  dotsEl.innerHTML  = '';
+  for (let i = 0; i < visibleDots; i++) {
+    const p   = i + 1;
+    const dot = document.createElement('div');
+    dot.className = 'pager__dot' + (p === currentPage ? ' pager__dot--active' : '');
+    dot.title     = `Page ${p}`;
+    const reachable = !!pageCache[p] || (p === currentPage + 1 && showNext);
+    if (reachable) dot.addEventListener('click', () => goPage(p));
+    else           dot.style.opacity = '0.3';
+    dotsEl.appendChild(dot);
+  }
 }
 
-// ── Filter / Search ───────────────────────────────────────────
-function setFilter(el) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  currentFilter = el.dataset.filter;
-  if (cache[currentPage]) renderGroups(cache[currentPage].deployments);
+/* ═══════════════════════════════════════════
+   FILTER / SEARCH
+═══════════════════════════════════════════ */
+function setFilter(chip) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('filter-chip--active'));
+  chip.classList.add('filter-chip--active');
+  currentFilter = chip.dataset.filter;
+  if (pageCache[currentPage]) renderGroups(pageCache[currentPage].deployments);
 }
 
-// ── Cancel registry: avoids JSON inside onclick attrs ─────────
-// Maps integer key → { uids, label }
-const cancelRegistry = new Map();
-let _cancelKey = 0;
-function regCancel(uids, label) {
-  const k = ++_cancelKey;
-  cancelRegistry.set(k, { uids, label });
-  return k;
+/* ═══════════════════════════════════════════
+   MODAL FACTORY HELPERS
+═══════════════════════════════════════════ */
+function makeOverlay() {
+  const el = document.createElement('div');
+  el.className = 'modal-overlay';
+  return el;
 }
 
-// ── Cancel: confirm dialog ────────────────────────────────────
-function confirmCancel(registryKey) {
-  const entry = cancelRegistry.get(registryKey);
-  if (!entry) return;
-  const { uids, label } = entry;
-
-  const overlay = document.createElement('div');
-  overlay.className = 'confirm-overlay';
-
-  const yesKey = regCancel(uids, label); // re-register so the yes-btn has its own key
-
-  const box = document.createElement('div');
-  box.className = 'confirm-box';
-  box.innerHTML = `
-    <div class="confirm-title">Cancel deployment${uids.length > 1 ? 's' : ''}?</div>
-    <div class="confirm-sub">${label}<br/>This action cannot be undone.</div>
-    <div class="confirm-actions">
-      <button class="confirm-no">Keep running</button>
-      <button class="confirm-yes">✕ Yes, cancel${uids.length > 1 ? ' all' : ''}</button>
-    </div>`;
-
-  box.querySelector('.confirm-no').addEventListener('click', () => overlay.remove());
-  box.querySelector('.confirm-yes').addEventListener('click', () => {
-    overlay.remove();
-    cancelDeployments(uids);
-  });
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+function makeModal() {
+  const el = document.createElement('div');
+  el.className = 'modal';
+  return el;
 }
 
-async function cancelDeployments(uids) {
-  // Disable all involved buttons immediately
-  uids.forEach(uid => {
-    const btn = document.getElementById(`cbtn-${uid}`);
-    if (btn) { btn.disabled = true; btn.classList.add('canceling'); btn.textContent = '⏳ Canceling…'; }
-  });
-
-  const results = await Promise.allSettled(
-    uids.map(uid =>
-      fetch(`https://api.vercel.com/v12/deployments/${uid}/cancel`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(async r => {
-        if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${r.status}`); }
-        return uid;
-      })
-    )
-  );
-
-  let ok = 0, fail = 0;
-  results.forEach((r, i) => {
-    const uid = uids[i];
-    const btn      = document.getElementById(`cbtn-${uid}`);
-    const statusEl = document.getElementById(`status-${uid}`);
-    if (r.status === 'fulfilled') {
-      ok++;
-      if (btn)      { btn.classList.remove('canceling'); btn.classList.add('done'); btn.textContent = '✓ Canceled'; }
-      if (statusEl) { statusEl.innerHTML = statusBadge('CANCELED'); }
-      if (cache[currentPage]) {
-        const d = cache[currentPage].deployments.find(x => x.uid === uid);
-        if (d) d.state = 'CANCELED';
-      }
-    } else {
-      fail++;
-      if (btn) { btn.disabled = false; btn.classList.remove('canceling'); btn.textContent = '✕ Cancel'; }
-    }
-  });
-
-  if (ok > 0 && fail === 0) showToast(`Canceled ${ok} deployment${ok > 1 ? 's' : ''} ✓`);
-  else if (ok > 0)           showToast(`${ok} canceled, ${fail} failed`, true);
-  else                       showToast(`Failed to cancel ${fail} deployment${fail > 1 ? 's' : ''}`, true);
-
-  updateGroupCancelButtons();
-}
-
-function updateGroupCancelButtons() {
-  document.querySelectorAll('.commit-group').forEach(groupEl => {
-    const actionsEl = groupEl.querySelector('.commit-header-actions');
-    if (!actionsEl) return;
-    // Collect active uids from row-level buttons that are still cancellable
-    const rowBtns = groupEl.querySelectorAll('tbody .cancel-btn:not(.done):not(:disabled)');
-    const uids = Array.from(rowBtns).map(b => b.dataset.uid).filter(Boolean);
-    if (uids.length > 0) {
-      const k = regCancel(uids, `Cancel all ${uids.length} active deployment${uids.length > 1 ? 's' : ''} in this commit?`);
-      const newBtn = document.createElement('button');
-      newBtn.className = 'cancel-btn';
-      newBtn.title = 'Cancel all active deployments in this commit';
-      newBtn.textContent = `✕ Cancel all (${uids.length})`;
-      newBtn.addEventListener('click', () => confirmCancel(k));
-      actionsEl.replaceChildren(newBtn);
-    } else {
-      actionsEl.replaceChildren();
-    }
-  });
-}
-
-// ── Helpers ───────────────────────────────────────────────────
-function statusBadge(state) {
-  const m = { READY:['badge-ready','Ready'], BUILDING:['badge-building','Building'],
-              ERROR:['badge-error','Error'], QUEUED:['badge-queued','Queued'],
-              CANCELED:['badge-error','Canceled'] };
-  const [cls, label] = m[state] || ['badge-queued', state];
-  return `<span class="badge ${cls}">${label}</span>`;
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function statusChip(state) {
+  const map = {
+    READY:    ['ready',    'Ready'],
+    BUILDING: ['building', 'Building'],
+    ERROR:    ['error',    'Error'],
+    QUEUED:   ['queued',   'Queued'],
+    CANCELED: ['canceled', 'Canceled'],
+  };
+  const [cls, label] = map[state] || ['queued', state];
+  return `<span class="status-chip status-chip--${cls}"><span class="status-chip__dot"></span>${label}</span>`;
 }
 
 function timeAgo(ms) {
   if (!ms) return '—';
-  const diff = Date.now() - ms, s = Math.floor(diff/1000);
+  const diff = Date.now() - ms;
+  const s = Math.floor(diff / 1000);
   if (s < 60)  return `${s}s ago`;
-  const m = Math.floor(s/60);
+  const m = Math.floor(s / 60);
   if (m < 60)  return `${m}m ago`;
-  const h = Math.floor(m/60);
+  const h = Math.floor(m / 60);
   if (h < 24)  return `${h}h ago`;
-  const d = Math.floor(h/24);
+  const d = Math.floor(h / 24);
   if (d < 30)  return `${d}d ago`;
   return new Date(ms).toLocaleDateString();
 }
 
 function esc(str = '') {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function setMain(html) { document.getElementById('mainArea').innerHTML = html; }
-
-let _toast;
-function showToast(msg, err = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = err ? 'show err' : 'show';
-  clearTimeout(_toast); _toast = setTimeout(() => t.className = '', 2800);
+function setMain(html) {
+  document.getElementById('mainArea').innerHTML = html;
 }
 
-// ── Init ──────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast toast--visible' + (type === 'error' ? ' toast--error' : type === 'success' ? ' toast--success' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  // Restore saved token
+  tokenRestore();
+
+  // Fetch button
+  document.getElementById('fetchBtn').addEventListener('click', startFresh);
+
+  // Clear token button
+  document.getElementById('clearBtn').addEventListener('click', tokenClear);
+
+  // Enter key in token input
   document.getElementById('tokenInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') startFresh();
   });
-  let _sb;
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => setFilter(chip));
+  });
+
+  // Pager buttons
+  document.getElementById('prevBtn').addEventListener('click', () => goPage(currentPage - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => goPage(currentPage + 1));
+
+  // Search
+  let _searchDebounce;
   document.getElementById('searchInput').addEventListener('input', e => {
     searchQ = e.target.value;
-    clearTimeout(_sb);
-    _sb = setTimeout(() => {
-      if (cache[currentPage]) renderGroups(cache[currentPage].deployments);
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(() => {
+      if (pageCache[currentPage]) renderGroups(pageCache[currentPage].deployments);
     }, 200);
   });
+
+  // Auto-fetch if token already saved
+  const saved = cookieGet(COOKIE_NAME);
+  if (saved) {
+    token = saved;
+    document.getElementById('statsBar').style.display = 'grid';
+    document.getElementById('toolbar').style.display  = 'flex';
+    goPage(1);
+  }
 });
 </script>
 </body>
