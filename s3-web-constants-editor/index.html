@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 VS Code IDE</title>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --sidebar: #252526;
+            --active: #37373d;
+            --text: #cccccc;
+            --accent: #007acc;
+        }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        #app { display: flex; flex-direction: column; height: 100vh; }
+        
+        #toolbar { height: 40px; background: #3c3c3c; display: flex; align-items: center; padding: 0 10px; gap: 8px; font-size: 13px; }
+        input { background: #3c3c3c; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 2px; }
+        button { background: #555; border: none; color: white; padding: 4px 10px; border-radius: 2px; cursor: pointer; }
+        button:hover { background: #666; }
+
+        #main { display: flex; flex: 1; overflow: hidden; }
+        #explorer { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; }
+        .explorer-header { padding: 10px; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #aaa; }
+        #explorer-list { height: 100%; overflow-y: auto; }
+        
+        .file-item { display: flex; align-items: center; padding: 4px 10px; cursor: pointer; font-size: 13px; justify-content: space-between; }
+        .file-item:hover { background: var(--active); }
+        .file-actions { display: none; gap: 5px; }
+        .file-item:hover .file-actions { display: flex; }
+        
+        #editor { flex: 1; }
+        #statusbar { height: 22px; background: var(--accent); color: white; display: flex; align-items: center; padding: 0 10px; font-size: 12px; }
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; color: white; font-size: 20px; }
+    </style>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1691.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+    <div id="loading-overlay">Loading...</div>
+    <div id="app">
+        <div id="toolbar">
+            <input type="text" id="jsonInput" placeholder='JSON Config' style="width: 150px;">
+            <button id="importBtn">Import</button>
+            <input type="text" id="accessKey" placeholder="Access Key">
+            <input type="password" id="secretKey" placeholder="Secret Key">
+            <input type="text" id="region" placeholder="Region">
+            <input type="text" id="bucket" placeholder="Bucket">
+            <button id="connectBtn" style="background: var(--accent);">Connect</button>
+            <button id="newFileBtn">+ New</button>
+            <button id="saveBtn">Save</button>
+            <button id="formatBtn">Format</button>
+            <button id="diffBtn" style="background:#555">Compare</button>
+        </div>
+        <div id="main">
+            <div id="explorer">
+                <div class="explorer-header">Explorer</div>
+                <div id="explorer-list"></div>
+            </div>
+            <div id="editor"></div>
+            <div id="diff-editor" style="flex: 1; display: none;"></div>
+        </div>
+        <div id="statusbar" id="statusText">Ready</div>
+    </div>
+
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs' }});
+        let editor, diffEditor, s3, currentFile, originalModel;
+        let monacoInitialized = false;
+
+        async function ensureMonaco() {
+            if (!monacoInitialized) {
+                await new Promise(resolve => {
+                    require(['vs/editor/editor.main'], () => {
+                        monacoInitialized = true;
+                        resolve();
+                    });
+                });
+            }
+        }
+
+        const setStatus = (msg) => document.getElementById('statusbar').textContent = msg;
+        
+        const showLoading = (msg) => {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.textContent = msg;
+            overlay.style.display = 'flex';
+        };
+        const hideLoading = () => {
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        
+        const getLanguage = (filename) => {
+            const ext = filename.split('.').pop();
+            const map = { js: 'javascript', ts: 'typescript', html: 'html', css: 'css', json: 'json', md: 'markdown' };
+            return map[ext] || 'plaintext';
+        };
+
+        document.getElementById('diffBtn').onclick = async () => {
+            if(!currentFile || !editor) return;
+            await ensureMonaco();
+            const editorDiv = document.getElementById('editor');
+            const diffDiv = document.getElementById('diff-editor');
+            
+            if (diffDiv.style.display === 'none') {
+                editorDiv.style.display = 'none';
+                diffDiv.style.display = 'block';
+                
+                if(!diffEditor) {
+                    diffEditor = monaco.editor.createDiffEditor(diffDiv, { theme: 'vs-dark', automaticLayout: true });
+                }
+                diffEditor.setModel({
+                    original: originalModel,
+                    modified: editor.getModel()
+                });
+            } else {
+                editorDiv.style.display = 'block';
+                diffDiv.style.display = 'none';
+            }
+        };
+
+        document.getElementById('importBtn').onclick = () => {
+            try {
+                const config = JSON.parse(document.getElementById('jsonInput').value);
+                document.getElementById('accessKey').value = config.key;
+                document.getElementById('secretKey').value = config.id;
+                document.getElementById('bucket').value = config.bucket;
+                document.getElementById('region').value = config.region;
+            } catch (e) { alert('Invalid JSON'); }
+        };
+
+        document.getElementById('newFileBtn').onclick = async () => {
+            if(!s3) return alert('Connect first');
+            const name = prompt('File name:');
+            if (!name) return;
+            await s3.putObject({ Key: name, Body: '' }).promise();
+            listFiles();
+        };
+
+        document.getElementById('saveBtn').onclick = async () => {
+            if(!currentFile || !editor) return;
+            setStatus('Saving...');
+            await s3.putObject({ Key: currentFile, Body: editor.getValue() }).promise();
+            originalModel = monaco.editor.createModel(editor.getValue(), getLanguage(currentFile));
+            setStatus('Saved: ' + currentFile);
+        };
+
+        document.getElementById('formatBtn').onclick = () => {
+            if(editor) editor.getAction('editor.action.formatDocument').run();
+        };
+
+        document.getElementById('connectBtn').onclick = () => {
+            const bucket = document.getElementById('bucket').value;
+            const accessKeyId = document.getElementById('accessKey').value;
+            const secretAccessKey = document.getElementById('secretKey').value;
+            const region = document.getElementById('region').value;
+
+            if (!bucket || !accessKeyId || !secretAccessKey || !region) return alert('Fill all fields');
+
+            localStorage.setItem('s3-ide-creds', JSON.stringify({ accessKeyId, secretAccessKey, region, bucket }));
+            AWS.config.update({ accessKeyId, secretAccessKey, region });
+            s3 = new AWS.S3({ params: { Bucket: bucket } });
+            listFiles();
+        };
+
+        window.onload = () => {
+            const saved = localStorage.getItem('s3-ide-creds');
+            if (saved) {
+                try {
+                    const { accessKeyId, secretAccessKey, region, bucket } = JSON.parse(saved);
+                    document.getElementById('accessKey').value = accessKeyId;
+                    document.getElementById('secretKey').value = secretAccessKey;
+                    document.getElementById('region').value = region;
+                    document.getElementById('bucket').value = bucket;
+                } catch(e) {}
+            }
+        };
+
+        async function listFiles() {
+            showLoading('Loading files...');
+            try {
+                const data = await s3.listObjectsV2().promise();
+                const explorer = document.getElementById('explorer-list');
+                explorer.innerHTML = '';
+                data.Contents.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    div.innerHTML = `<span>${f.Key}</span> 
+                        <div class="file-actions">
+                            <button onclick="renameFile('${f.Key}')">R</button>
+                            <button onclick="deleteFile('${f.Key}')">D</button>
+                        </div>`;
+                    div.onclick = (e) => { if(e.target.tagName !== 'BUTTON') openFile(f.Key); };
+                    explorer.appendChild(div);
+                });
+                setStatus('Connected: ' + data.Contents.length + ' files');
+            } catch (e) { alert('List error: ' + e.message); setStatus('Error'); }
+            hideLoading();
+        }
+
+        async function renameFile(oldKey) {
+            const newKey = prompt('New name:', oldKey);
+            if (!newKey || newKey === oldKey) return;
+            await s3.copyObject({ CopySource: document.getElementById('bucket').value + '/' + oldKey, Key: newKey }).promise();
+            await s3.deleteObject({ Key: oldKey }).promise();
+            listFiles();
+        }
+
+        async function deleteFile(key) {
+            if (!confirm('Delete ' + key + '?')) return;
+            await s3.deleteObject({ Key: key }).promise();
+            listFiles();
+        }
+
+        async function openFile(key) {
+            currentFile = key;
+            showLoading('Loading ' + key + '...');
+            try {
+                const data = await s3.getObject({ Key: key }).promise();
+                const lang = getLanguage(key);
+                await ensureMonaco();
+                
+                if (!editor) {
+                    editor = monaco.editor.create(document.getElementById('editor'), {
+                        value: data.Body.toString(),
+                        language: lang, 
+                        theme: 'vs-dark', 
+                        automaticLayout: true
+                    });
+                } else {
+                    const model = monaco.editor.createModel(data.Body.toString(), lang);
+                    editor.setModel(model);
+                }
+                setStatus('Editing: ' + key);
+                if (originalModel) originalModel.dispose();
+                originalModel = monaco.editor.createModel(data.Body.toString(), lang);
+            } catch (e) { alert('Open error: ' + e.message); }
+            hideLoading();
+        }
+    </script>
+</body>
+</html>
