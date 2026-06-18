@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Viewer</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+textarea { width: 100%; height: 120px; }
+pre { background: #f4f4f4; padding: 12px; overflow: auto; border-radius: 6px; }
+.error { color: red; }
+.success { color: green; }
+</style>
+</head>
+<body>
+<h1>Simple JSON Viewer</h1>
+<p>Supports: ?json=... or ?b64=...</p>
+<textarea id="input" placeholder="Paste JSON here"></textarea><br><br>
+<button onclick="renderJson()">Render</button>
+<p id="status"></p>
+<pre id="output"></pre>
+
+<script>
+function loadFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  let jsonText = '';
+
+  if (params.has('b64')) {
+    try {
+      jsonText = atob(params.get('b64'));
+    } catch (e) {
+      document.getElementById('status').textContent = 'Invalid Base64';
+      document.getElementById('status').className = 'error';
+      return;
+    }
+  } else if (params.has('json')) {
+    jsonText = params.get('json');
+  }
+
+  if (jsonText) {
+    document.getElementById('input').value = jsonText;
+    renderJson();
+  }
+}
+
+function renderJson() {
+  const input = document.getElementById('input').value;
+  const status = document.getElementById('status');
+  const output = document.getElementById('output');
+
+  try {
+    const obj = JSON.parse(input);
+    output.textContent = JSON.stringify(obj, null, 2);
+    status.textContent = '✓ Valid JSON';
+    status.className = 'success';
+  } catch (e) {
+    output.textContent = '';
+    status.textContent = '✗ ' + e.message;
+    status.className = 'error';
+  }
+}
+
+loadFromQuery();
+</script>
+</body>
+</html>
