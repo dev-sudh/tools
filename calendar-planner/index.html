@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendar Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <div class="wrap">
+    <h1>Calendar Planner</h1>
+
+    <div class="toolbar">
+      <label class="lbl" for="year">Year</label>
+      <select id="year" aria-label="Year"></select>
+
+      <label class="lbl" for="month">Month</label>
+      <select id="month" aria-label="Month"></select>
+
+      <button id="prev" type="button" aria-label="Previous month">&larr;</button>
+      <button id="today" type="button">Today</button>
+      <button id="next" type="button" aria-label="Next month">&rarr;</button>
+
+      <span class="spacer"></span>
+      <button id="bulk" type="button" aria-pressed="false"
+              title="Toggle bulk selection mode">Bulk select: Off</button>
+      <button id="clear" type="button">Clear month</button>
+    </div>
+
+    <p class="hint" id="hint"></p>
+
+    <div class="calendar">
+      <div class="weekdays" aria-hidden="true">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span>
+        <span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+      <div class="grid" id="grid" role="grid" aria-label="Month days"></div>
+    </div>
+
+    <div class="selbar" id="selbar" role="region" aria-label="Bulk actions for selected days"></div>
+
+    <div class="below">
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="below">
+      <div class="summary" id="summary"></div>
+    </div>
+  </div>
+
+  <div id="menu" role="menu" aria-label="Set day status"></div>
+
+</body>
+</html>
